@@ -1,0 +1,19 @@
+{
+  "version": "2017-02-28",
+  "operation": "UpdateItem",
+  "key": {
+    "userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+    "id": $util.dynamodb.toDynamoDBJson($ctx.args.input.id)
+  },
+  "update": {
+    "expression": "set title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, updatedAt = :updatedAt",
+    "expressionValues": {
+      ":title": $util.dynamodb.toDynamoDBJson($ctx.args.input.title),
+      ":description": $util.dynamodb.toDynamoDBJson($ctx.args.input.description),
+      ":code": $util.dynamodb.toDynamoDBJson($ctx.args.input.code),
+      ":svgPreview": $util.dynamodb.toDynamoDBJson($ctx.args.input.svgPreview),
+      ":tags": $util.dynamodb.toDynamoDBJson($ctx.args.input.tags),
+      ":updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
+    }
+  }
+}

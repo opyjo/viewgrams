@@ -1,0 +1,58 @@
+# GraphQL Schema for Mermaid Viewer
+
+scalar AWSDateTime
+
+type Diagram {
+  id: ID!
+  userId: ID!
+  title: String!
+  description: String
+  code: String!
+  svgPreview: String
+  tags: [String!]
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type DiagramConnection {
+  items: [Diagram!]!
+  nextToken: String
+}
+
+input CreateDiagramInput {
+  title: String!
+  description: String
+  code: String!
+  svgPreview: String
+  tags: [String!]
+}
+
+input UpdateDiagramInput {
+  id: ID!
+  title: String
+  description: String
+  code: String
+  svgPreview: String
+  tags: [String!]
+}
+
+type Query {
+  getDiagram(id: ID!): Diagram
+  listDiagrams(limit: Int, nextToken: String): DiagramConnection!
+  searchDiagrams(searchTerm: String!): [Diagram!]!
+}
+
+type Mutation {
+  createDiagram(input: CreateDiagramInput!): Diagram!
+  updateDiagram(input: UpdateDiagramInput!): Diagram
+  deleteDiagram(id: ID!): Diagram
+}
+
+type Subscription {
+  onCreateDiagram(userId: ID!): Diagram
+    @aws_subscribe(mutations: ["createDiagram"])
+  onUpdateDiagram(userId: ID!): Diagram
+    @aws_subscribe(mutations: ["updateDiagram"])
+  onDeleteDiagram(userId: ID!): Diagram
+    @aws_subscribe(mutations: ["deleteDiagram"])
+}

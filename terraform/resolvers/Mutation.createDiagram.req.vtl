@@ -1,0 +1,17 @@
+{
+  "version": "2017-02-28",
+  "operation": "PutItem",
+  "key": {
+    "userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+    "id": $util.dynamodb.toDynamoDBJson($util.autoId())
+  },
+  "attributeValues": {
+    "title": $util.dynamodb.toDynamoDBJson($ctx.args.input.title),
+    "description": $util.dynamodb.toDynamoDBJson($ctx.args.input.description),
+    "code": $util.dynamodb.toDynamoDBJson($ctx.args.input.code),
+    "svgPreview": $util.dynamodb.toDynamoDBJson($ctx.args.input.svgPreview),
+    "tags": $util.dynamodb.toDynamoDBJson($ctx.args.input.tags),
+    "createdAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601()),
+    "updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
+  }
+}

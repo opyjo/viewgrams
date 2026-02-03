@@ -1,0 +1,11 @@
+{
+  "version": "2017-02-28",
+  "operation": "Scan",
+  "filter": {
+    "expression": "userId = :userId AND (contains(title, :searchTerm) OR contains(description, :searchTerm))",
+    "expressionValues": {
+      ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+      ":searchTerm": $util.dynamodb.toDynamoDBJson($ctx.args.searchTerm)
+    }
+  }
+}
