@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useLazyQuery, useMutation } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/ui/Header';
@@ -9,7 +9,8 @@ import PreviewPanel from '@/components/editor/PreviewPanel';
 import ExampleSelector from '@/components/ui/ExampleSelector';
 import { defaultCode } from '@/lib/examples';
 import { useDebounce } from '@/hooks/use-debounce';
-import { confirmSignUp, getCurrentSession, signIn, signOut, signUp, type AuthSession } from '@/lib/auth';
+import { getCurrentSession, signOut, type AuthSession } from '@/lib/auth';
+import AuthModal from '@/components/ui/AuthModal';
 import { CREATE_DIAGRAM, UPDATE_DIAGRAM } from '@/graphql/mutations';
 import { GET_DIAGRAM } from '@/graphql/queries';
 
@@ -54,12 +55,6 @@ export default function MermaidApp() {
     const diagramParam = searchParams.get('diagram');
 
     const [authOpen, setAuthOpen] = useState(false);
-    const [authMode, setAuthMode] = useState<'signIn' | 'signUp' | 'confirm'>('signIn');
-    const [authLoading, setAuthLoading] = useState(false);
-    const [authError, setAuthError] = useState<string | null>(null);
-    const [authEmail, setAuthEmail] = useState('');
-    const [authPassword, setAuthPassword] = useState('');
-    const [confirmCode, setConfirmCode] = useState('');
     const [session, setSession] = useState<AuthSession | null>(null);
     const [sessionLoading, setSessionLoading] = useState(true);
 
@@ -83,10 +78,13 @@ export default function MermaidApp() {
         };
     }, []);
 
-    const openAuth = (mode: 'signIn' | 'signUp' | 'confirm') => {
-        setAuthMode(mode);
-        setAuthError(null);
+    const openAuth = () => {
         setAuthOpen(true);
+    };
+
+    const handleAuthSuccess = (newSession: AuthSession) => {
+        setSession(newSession);
+        setAuthOpen(false);
     };
 
     const handleExport = (type: 'svg' | 'png') => {
@@ -103,20 +101,21 @@ export default function MermaidApp() {
             document.body.appendChild(downloadLink);
             downloadLink.click();
             document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(svgUrl);
         } else {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const data = new XMLSerializer().serializeToString(svgElement);
-            const win = window.URL || window.webkitURL || window;
             const img = new Image();
             const blob = new Blob([data], { type: 'image/svg+xml' });
-            const url = win.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
 
             img.onload = function () {
                 canvas.width = img.width * 2;
                 canvas.height = img.height * 2;
                 ctx?.scale(2, 2);
                 ctx?.drawImage(img, 0, 0);
+                URL.revokeObjectURL(url);
                 const pngUrl = canvas.toDataURL('image/png');
                 const downloadLink = document.createElement('a');
                 downloadLink.href = pngUrl;
@@ -157,7 +156,7 @@ export default function MermaidApp() {
         setSaveError(null);
 
         if (!session) {
-            openAuth('signIn');
+            openAuth();
             return;
         }
 
@@ -247,7 +246,7 @@ export default function MermaidApp() {
         router.replace('/');
     };
 
-    const handleSelectDiagram = async (id: string) => {
+    const handleSelectDiagram = useCallback(async (id: string) => {
         if (!session) return;
         try {
             const result = await fetchDiagram({ variables: { id } });
@@ -260,74 +259,18 @@ export default function MermaidApp() {
         } catch (error) {
             console.error(error);
         }
-    };
+    }, [session, fetchDiagram]);
 
     useEffect(() => {
         if (!diagramParam) return;
         if (sessionLoading) return;
         if (!session) {
-            openAuth('signIn');
+            openAuth();
             return;
         }
         if (diagramParam === activeDiagramId) return;
         handleSelectDiagram(diagramParam);
-    }, [diagramParam, session, activeDiagramId, sessionLoading]);
-
-    useEffect(() => {
-        if (session && authOpen) {
-            setAuthOpen(false);
-        }
-    }, [session, authOpen]);
-
-    const handleSignIn = async (event: React.FormEvent) => {
-        event.preventDefault();
-        setAuthLoading(true);
-        setAuthError(null);
-
-        try {
-            const nextSession = await signIn(authEmail, authPassword);
-            setSession(nextSession);
-            setAuthOpen(false);
-            setAuthPassword('');
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unable to sign in.';
-            setAuthError(message);
-        } finally {
-            setAuthLoading(false);
-        }
-    };
-
-    const handleSignUp = async (event: React.FormEvent) => {
-        event.preventDefault();
-        setAuthLoading(true);
-        setAuthError(null);
-
-        try {
-            await signUp(authEmail, authPassword);
-            setAuthMode('confirm');
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unable to sign up.';
-            setAuthError(message);
-        } finally {
-            setAuthLoading(false);
-        }
-    };
-
-    const handleConfirm = async (event: React.FormEvent) => {
-        event.preventDefault();
-        setAuthLoading(true);
-        setAuthError(null);
-
-        try {
-            await confirmSignUp(authEmail, confirmCode);
-            setAuthMode('signIn');
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unable to confirm sign up.';
-            setAuthError(message);
-        } finally {
-            setAuthLoading(false);
-        }
-    };
+    }, [diagramParam, session, activeDiagramId, sessionLoading, handleSelectDiagram]);
 
     const handleSignOut = () => {
         signOut();
@@ -343,7 +286,7 @@ export default function MermaidApp() {
                 onExport={handleExport}
                 onNew={handleNew}
                 onSignOut={handleSignOut}
-                onSignIn={() => openAuth('signIn')}
+                onSignIn={openAuth}
                 saving={saving}
                 userEmail={session?.email || null}
                 status={session ? 'connected' : 'offline'}
@@ -390,114 +333,11 @@ export default function MermaidApp() {
                 </div>
             </main>
 
-            {authOpen && (
-                <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4'>
-                    <div className='w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900 p-6 text-slate-100 shadow-2xl'>
-                        <div className='flex items-center justify-between mb-4'>
-                            <h2 className='text-lg font-semibold'>
-                                {authMode === 'signIn' && 'Sign in'}
-                                {authMode === 'signUp' && 'Create account'}
-                                {authMode === 'confirm' && 'Confirm sign up'}
-                            </h2>
-                            <button
-                                onClick={() => setAuthOpen(false)}
-                                className='text-slate-400 hover:text-slate-200'
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        {authError && (
-                            <div className='mb-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200'>
-                                {authError}
-                            </div>
-                        )}
-
-                        {authMode !== 'confirm' && (
-                            <form onSubmit={authMode === 'signIn' ? handleSignIn : handleSignUp} className='space-y-3'>
-                                <div>
-                                    <label className='text-[10px] uppercase tracking-[0.3em] text-slate-400'>Email</label>
-                                    <input
-                                        type='email'
-                                        required
-                                        value={authEmail}
-                                        onChange={(event) => setAuthEmail(event.target.value)}
-                                        className='mt-1 w-full rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300/30'
-                                        placeholder='you@example.com'
-                                    />
-                                </div>
-                                <div>
-                                    <label className='text-[10px] uppercase tracking-[0.3em] text-slate-400'>Password</label>
-                                    <input
-                                        type='password'
-                                        required
-                                        value={authPassword}
-                                        onChange={(event) => setAuthPassword(event.target.value)}
-                                        className='mt-1 w-full rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300/30'
-                                        placeholder='••••••••'
-                                    />
-                                </div>
-                                <button
-                                    type='submit'
-                                    disabled={authLoading}
-                                    className='w-full rounded-lg bg-amber-300 py-2 text-sm font-semibold text-slate-950 transition-all hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60'
-                                >
-                                    {authLoading ? 'Working…' : authMode === 'signIn' ? 'Sign in' : 'Create account'}
-                                </button>
-                                <div className='text-center text-xs text-slate-400'>
-                                    {authMode === 'signIn' ? (
-                                        <button
-                                            type='button'
-                                            onClick={() => setAuthMode('signUp')}
-                                            className='text-amber-200 hover:text-amber-100'
-                                        >
-                                            Need an account? Sign up
-                                        </button>
-                                    ) : (
-                                        <button
-                                            type='button'
-                                            onClick={() => setAuthMode('signIn')}
-                                            className='text-amber-200 hover:text-amber-100'
-                                        >
-                                            Have an account? Sign in
-                                        </button>
-                                    )}
-                                </div>
-                            </form>
-                        )}
-
-                        {authMode === 'confirm' && (
-                            <form onSubmit={handleConfirm} className='space-y-3'>
-                                <div>
-                                    <label className='text-[10px] uppercase tracking-[0.3em] text-slate-400'>Confirmation code</label>
-                                    <input
-                                        type='text'
-                                        required
-                                        value={confirmCode}
-                                        onChange={(event) => setConfirmCode(event.target.value)}
-                                        className='mt-1 w-full rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300/30'
-                                        placeholder='123456'
-                                    />
-                                </div>
-                                <button
-                                    type='submit'
-                                    disabled={authLoading}
-                                    className='w-full rounded-lg bg-amber-300 py-2 text-sm font-semibold text-slate-950 transition-all hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60'
-                                >
-                                    {authLoading ? 'Confirming…' : 'Confirm account'}
-                                </button>
-                                <button
-                                    type='button'
-                                    onClick={() => setAuthMode('signIn')}
-                                    className='w-full text-xs text-slate-400 hover:text-slate-200'
-                                >
-                                    Back to sign in
-                                </button>
-                            </form>
-                        )}
-                    </div>
-                </div>
-            )}
+            <AuthModal
+                open={authOpen}
+                onClose={() => setAuthOpen(false)}
+                onAuthSuccess={handleAuthSuccess}
+            />
         </div>
     );
 }

@@ -24,6 +24,14 @@ export async function POST(request: Request) {
             );
         }
 
+        // Validate key to prevent path traversal
+        if (key.includes('..') || !key.startsWith('users/')) {
+            return NextResponse.json(
+                { error: 'Invalid key format' },
+                { status: 400 }
+            );
+        }
+
         const client = new S3Client({ region });
         const command = new PutObjectCommand({
             Bucket: bucket,

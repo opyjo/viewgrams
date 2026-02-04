@@ -13,7 +13,7 @@ if (typeof window !== 'undefined') {
 export const renderMermaid = async (code: string) => {
     try {
         // Generate a random ID for each render to avoid conflicts
-        const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+        const id = `mermaid-${Math.random().toString(36).substring(2, 11)}`;
 
         // Ensure code is not empty and is valid
         if (!code.trim()) {
