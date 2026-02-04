@@ -5,8 +5,8 @@ if (typeof window !== 'undefined') {
     mermaid.initialize({
         startOnLoad: false,
         theme: 'default',
-        securityLevel: 'loose',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        securityLevel: 'strict',
+        fontFamily: 'Space Grotesk, system-ui, sans-serif',
     });
 }
 

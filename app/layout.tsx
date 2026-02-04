@@ -1,8 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Fraunces, Space_Grotesk } from "next/font/google";
+import Providers from "./providers";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const spaceGrotesk = Space_Grotesk({
+    subsets: ["latin"],
+    variable: "--font-body",
+});
+
+const fraunces = Fraunces({
+    subsets: ["latin"],
+    variable: "--font-display",
+});
 
 export const metadata: Metadata = {
     title: "Mermaid Studio | Pro Diagram Generator",
@@ -16,8 +25,8 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className={`${inter.className} antialiased selection:bg-blue-100 selection:text-blue-900`}>
-                {children}
+            <body className={`${spaceGrotesk.variable} ${fraunces.variable} antialiased selection:bg-amber-200 selection:text-slate-950`}>
+                <Providers>{children}</Providers>
             </body>
         </html>
     );

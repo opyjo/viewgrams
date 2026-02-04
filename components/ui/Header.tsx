@@ -1,56 +1,142 @@
 'use client';
 
 import React from 'react';
-import { Share2, Download, Moon, Sun, Save, LayoutGrid } from 'lucide-react';
+import Link from 'next/link';
+import { Cloud, Download, LogIn, LogOut, Plus, Save, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
     title?: string;
     onSave?: () => void;
     onExport?: (type: 'svg' | 'png') => void;
+    onNew?: () => void;
+    onSignOut?: () => void;
+    onSignIn?: () => void;
+    status?: 'connected' | 'offline';
+    saving?: boolean;
+    userEmail?: string | null;
+    saveDisabled?: boolean;
+    activePage?: 'editor' | 'saved';
+    showEditorActions?: boolean;
     className?: string;
 }
 
-export default function Header({ onSave, onExport, className }: HeaderProps) {
+export default function Header({
+    onSave,
+    onExport,
+    onNew,
+    onSignOut,
+    onSignIn,
+    status = 'offline',
+    saving,
+    userEmail,
+    saveDisabled,
+    activePage = 'editor',
+    showEditorActions = true,
+    className,
+}: HeaderProps) {
+    const showActions = showEditorActions && (onNew || onExport || onSave);
     return (
-        <header className={cn('h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md px-6 flex items-center justify-between shrink-0 sticky top-0 z-30', className)}>
+        <header className={cn('h-16 border-b border-white/10 bg-slate-950/40 backdrop-blur-xl px-6 flex items-center justify-between shrink-0 sticky top-0 z-30', className)}>
             <div className='flex items-center gap-3'>
-                <div className='w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200'>
-                    <LayoutGrid size={24} />
+                <div className='w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-200 to-cyan-300 text-slate-950 shadow-lg shadow-amber-500/30 flex items-center justify-center'>
+                    <Sparkles size={22} />
                 </div>
                 <div>
-                    <h1 className='text-lg font-bold text-slate-900 leading-tight'>Mermaid Studio</h1>
-                    <p className='text-[10px] font-medium text-slate-500 uppercase tracking-[0.1em]'>Pro Generator</p>
+                    <p className='text-[10px] font-semibold text-slate-300 uppercase tracking-[0.35em]'>Mermaid Studio</p>
+                    <h1 className='text-lg font-semibold text-slate-100 leading-tight font-[var(--font-display)]'>Diagram Command</h1>
                 </div>
+
+                <nav className='flex items-center gap-2 ml-4 sm:ml-6'>
+                    <Link
+                        href='/'
+                        className={cn(
+                            'px-3 py-1.5 rounded-full text-xs font-semibold transition-all',
+                            activePage === 'editor'
+                                ? 'bg-white/15 text-white'
+                                : 'text-slate-300 hover:text-slate-100 hover:bg-white/5'
+                        )}
+                    >
+                        Editor
+                    </Link>
+                    <Link
+                        href='/saved'
+                        className={cn(
+                            'px-3 py-1.5 rounded-full text-xs font-semibold transition-all',
+                            activePage === 'saved'
+                                ? 'bg-white/15 text-white'
+                                : 'text-slate-300 hover:text-slate-100 hover:bg-white/5'
+                        )}
+                    >
+                        Saved
+                    </Link>
+                </nav>
             </div>
 
             <div className='flex items-center gap-2'>
-                <div className='bg-slate-100 p-1 rounded-lg flex gap-1 items-center mr-2'>
-                    <button className='p-1.5 rounded-md bg-white shadow-sm text-blue-600'>
-                        <Sun size={16} />
-                    </button>
-                    <button className='p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-all'>
-                        <Moon size={16} />
-                    </button>
+                <div className='hidden md:flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/60 px-3 py-1 text-xs text-slate-300'>
+                    <span className={`h-2 w-2 rounded-full ${status === 'connected' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                    <Cloud size={12} />
+                    <span>{status === 'connected' ? 'Cloud synced' : 'Offline mode'}</span>
                 </div>
 
-                <div className='h-8 w-[1px] bg-slate-200 mx-2' />
+                <div className='h-8 w-[1px] bg-white/10 mx-2' />
 
-                <button
-                    onClick={() => onExport?.('svg')}
-                    className='flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-all text-sm font-medium'
-                >
-                    <Download size={18} />
-                    <span>Export</span>
-                </button>
+                {showActions && (
+                    <>
+                        {onNew && (
+                            <button
+                                onClick={onNew}
+                                className='flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-white/10 rounded-full transition-all text-sm font-medium'
+                            >
+                                <Plus size={16} />
+                                <span className='hidden sm:inline'>New</span>
+                            </button>
+                        )}
+                        {onExport && (
+                            <button
+                                onClick={() => onExport('svg')}
+                                className='flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-white/10 rounded-full transition-all text-sm font-medium'
+                            >
+                                <Download size={16} />
+                                <span className='hidden sm:inline'>Export</span>
+                            </button>
+                        )}
+                        {onSave && (
+                            <button
+                                onClick={onSave}
+                                disabled={saveDisabled}
+                                className={cn(
+                                    'flex items-center gap-2 px-4 py-2 rounded-full transition-all text-sm font-semibold shadow-lg shadow-amber-500/30',
+                                    saveDisabled
+                                        ? 'bg-amber-200/60 text-slate-700 cursor-not-allowed'
+                                        : 'bg-amber-300 hover:bg-amber-200 text-slate-950'
+                                )}
+                            >
+                                <Save size={16} />
+                                <span>{saving ? 'Saving…' : 'Save'}</span>
+                            </button>
+                        )}
+                    </>
+                )}
 
-                <button
-                    onClick={onSave}
-                    className='flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm font-semibold shadow-md shadow-blue-100'
-                >
-                    <Save size={18} />
-                    <span>Save Diagram</span>
-                </button>
+                {userEmail ? (
+                    <button
+                        onClick={onSignOut}
+                        className='hidden sm:flex items-center gap-2 pl-3 pr-4 py-2 border border-white/10 rounded-full text-xs text-slate-200 hover:bg-white/10 transition-all'
+                    >
+                        <span className='max-w-[120px] truncate'>{userEmail}</span>
+                        <LogOut size={14} />
+                    </button>
+                ) : (
+                    <button
+                        onClick={onSignIn}
+                        className='hidden sm:flex items-center gap-2 pl-3 pr-4 py-2 border border-white/10 rounded-full text-xs text-slate-200 hover:bg-white/10 transition-all'
+                    >
+                        <span>Sign in</span>
+                        <LogIn size={14} />
+                    </button>
+                )}
             </div>
         </header>
     );

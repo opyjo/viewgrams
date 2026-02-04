@@ -6,12 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@apollo/client": "^4.1.2",
+    "@aws-sdk/client-s3": "^3.896.0",
+    "@aws-sdk/s3-request-presigner": "^3.896.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/lodash": "^4.17.23",
+    "amazon-cognito-identity-js": "^6.3.16",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "framer-motion": "^12.29.2",
@@ -32,6 +36,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.3"
   }
 }

@@ -16,7 +16,7 @@ A complete step-by-step guide to deploy your Mermaid diagram application to AWS.
 
 ## What You're Building
 
-Your application will use three AWS services:
+Your application will use four AWS services:
 
 1. **DynamoDB** - A database that stores your Mermaid diagrams
    - Think of it like a spreadsheet in the cloud that's super fast
@@ -30,9 +30,13 @@ Your application will use three AWS services:
    - Lets your app ask for data using GraphQL queries
    - Automatically connects to DynamoDB and checks user authentication
 
+4. **S3** - Stores uploaded diagram assets (SVG + Mermaid source)
+   - Keeps rendered assets alongside the metadata stored in DynamoDB
+
 **How they work together:**
 ```
 Your Next.js App → Cognito (login) → AppSync API → DynamoDB (data)
+                                  ↘ S3 (assets)
 ```
 
 ---
@@ -706,6 +710,10 @@ NEXT_PUBLIC_APPSYNC_URL=https://YOUR_API_ID.appsync-api.us-east-2.amazonaws.com/
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-2_XXXXXXXXX
 NEXT_PUBLIC_COGNITO_CLIENT_ID=your_client_id_here
 NEXT_PUBLIC_COGNITO_REGION=us-east-2
+
+# S3 (server-side uploads)
+AWS_REGION=us-east-2
+AWS_S3_BUCKET=your_bucket_name
 ```
 
 **Example with fake values:**
@@ -714,9 +722,14 @@ NEXT_PUBLIC_APPSYNC_URL=https://abc123xyz.appsync-api.us-east-2.amazonaws.com/gr
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=us-east-2_AbCdEfGhI
 NEXT_PUBLIC_COGNITO_CLIENT_ID=1a2b3c4d5e6f7g8h9i0j1k2l
 NEXT_PUBLIC_COGNITO_REGION=us-east-2
+AWS_REGION=us-east-2
+AWS_S3_BUCKET=mermaidviewer-dev-diagrams
 ```
 
 3. Save the file
+
+> **Note:** The Next.js server needs AWS credentials that can upload to this bucket.
+> For local dev, set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in your environment.
 
 4. **Important:** Restart your development server:
 

@@ -7,6 +7,7 @@ A modern Mermaid diagram viewer and editor built with Next.js and AWS.
 - Create and edit Mermaid diagrams
 - Real-time diagram rendering
 - Save diagrams to AWS (DynamoDB)
+- Store diagram assets in S3 (SVG + source)
 - User authentication with AWS Cognito
 - GraphQL API with AWS AppSync
 
@@ -17,6 +18,7 @@ A modern Mermaid diagram viewer and editor built with Next.js and AWS.
 - **Diagrams:** Mermaid.js
 - **Backend:** AWS AppSync (GraphQL)
 - **Database:** AWS DynamoDB
+- **Storage:** AWS S3 (SVG + source uploads)
 - **Authentication:** AWS Cognito
 - **Infrastructure:** Terraform/OpenTofu
 
@@ -49,11 +51,21 @@ NEXT_PUBLIC_APPSYNC_URL=your_appsync_url
 NEXT_PUBLIC_COGNITO_USER_POOL_ID=your_pool_id
 NEXT_PUBLIC_COGNITO_CLIENT_ID=your_client_id
 NEXT_PUBLIC_COGNITO_REGION=us-east-2
+AWS_REGION=us-east-2
+AWS_S3_BUCKET=your_bucket_name
 ```
+Make sure your server/runtime has AWS credentials with permission to upload to the S3 bucket
+(`AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` locally, or an IAM role in production).
 
 5. Run the development server:
 ```bash
 npm run dev
+```
+
+### Testing
+
+```bash
+npm test
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the app.
@@ -64,6 +76,7 @@ Follow the comprehensive guide in `AWS_DEPLOYMENT_GUIDE.md` for step-by-step ins
 - Set up DynamoDB
 - Configure Cognito authentication
 - Create AppSync GraphQL API
+- Create S3 bucket for asset uploads
 - Connect your Next.js app
 
 ## Project Structure

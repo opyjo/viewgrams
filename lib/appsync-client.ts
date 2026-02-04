@@ -1,16 +1,23 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
+import { getIdToken } from '@/lib/auth';
 
 const URL = process.env.NEXT_PUBLIC_APPSYNC_URL;
-const API_KEY = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
-
 const httpLink = createHttpLink({
     uri: URL || 'http://localhost:4000/graphql', // Fallback for local dev/initial setup
-    headers: {
-        'x-api-key': API_KEY || '',
-    },
+});
+
+const authLink = setContext(async (_, { headers }) => {
+    const token = typeof window !== 'undefined' ? await getIdToken() : null;
+    return {
+        headers: {
+            ...headers,
+            Authorization: token || '',
+        },
+    };
 });
 
 export const client = new ApolloClient({
-    link: httpLink,
+    link: authLink.concat(httpLink),
     cache: new InMemoryCache(),
 });

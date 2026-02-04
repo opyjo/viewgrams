@@ -1,18 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter);
-  --font-mono: "Fira Code", monospace;
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0b0f1a;
+  --foreground: #e8ecf2;
+  --panel: #0f172a;
+  --panel-muted: #111827;
+  --border: #1f2a44;
+  --accent: #fbbf24;
+  --accent-strong: #f59e0b;
+  --accent-ink: #1f1300;
+  --sea: #06b6d4;
+  --smoke: #94a3b8;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(1200px 600px at 15% 10%, rgba(6, 182, 212, 0.18), transparent 60%),
+    radial-gradient(900px 480px at 85% -10%, rgba(251, 191, 36, 0.22), transparent 55%),
+    linear-gradient(160deg, #0b0f1a 0%, #0a1222 40%, #0b0f1a 100%);
   color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
