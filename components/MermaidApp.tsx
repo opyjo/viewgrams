@@ -11,6 +11,7 @@ import { defaultCode } from '@/lib/examples';
 import { useDebounce } from '@/hooks/use-debounce';
 import { getCurrentSession, signOut, type AuthSession } from '@/lib/auth';
 import AuthModal from '@/components/ui/AuthModal';
+import Toast, { type ToastType } from '@/components/ui/Toast';
 import { CREATE_DIAGRAM, UPDATE_DIAGRAM } from '@/graphql/mutations';
 import { GET_DIAGRAM } from '@/graphql/queries';
 
@@ -50,6 +51,7 @@ export default function MermaidApp() {
     const debouncedCode = useDebounce(code, 500);
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
     const diagramParam = searchParams.get('diagram');
