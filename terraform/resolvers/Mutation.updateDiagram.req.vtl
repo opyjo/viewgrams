@@ -6,13 +6,14 @@
     "id": $util.dynamodb.toDynamoDBJson($ctx.args.input.id)
   },
   "update": {
-    "expression": "set title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, updatedAt = :updatedAt",
+    "expression": "set title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, projectId = :projectId, updatedAt = :updatedAt",
     "expressionValues": {
       ":title": $util.dynamodb.toDynamoDBJson($ctx.args.input.title),
       ":description": $util.dynamodb.toDynamoDBJson($ctx.args.input.description),
       ":code": $util.dynamodb.toDynamoDBJson($ctx.args.input.code),
       ":svgPreview": $util.dynamodb.toDynamoDBJson($ctx.args.input.svgPreview),
       ":tags": $util.dynamodb.toDynamoDBJson($ctx.args.input.tags),
+      ":projectId": $util.dynamodb.toDynamoDBJson($ctx.args.input.projectId),
       ":updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
     }
   }

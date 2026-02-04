@@ -10,6 +10,7 @@ type Diagram {
   code: String!
   svgPreview: String
   tags: [String!]
+  projectId: String
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
@@ -19,12 +20,42 @@ type DiagramConnection {
   nextToken: String
 }
 
+type Project {
+  projectId: ID!
+  userId: ID!
+  name: String!
+  description: String
+  color: String
+  diagramCount: Int!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ProjectConnection {
+  items: [Project!]!
+  nextToken: String
+}
+
+input CreateProjectInput {
+  name: String!
+  description: String
+  color: String
+}
+
+input UpdateProjectInput {
+  projectId: ID!
+  name: String
+  description: String
+  color: String
+}
+
 input CreateDiagramInput {
   title: String!
   description: String
   code: String!
   svgPreview: String
   tags: [String!]
+  projectId: String
 }
 
 input UpdateDiagramInput {
@@ -34,18 +65,25 @@ input UpdateDiagramInput {
   code: String
   svgPreview: String
   tags: [String!]
+  projectId: String
 }
 
 type Query {
   getDiagram(id: ID!): Diagram
-  listDiagrams(limit: Int, nextToken: String): DiagramConnection!
-  searchDiagrams(searchTerm: String!): [Diagram!]!
+  listDiagrams(limit: Int, nextToken: String, projectId: String): DiagramConnection!
+  searchDiagrams(searchTerm: String!, projectId: String): [Diagram!]!
+  getProject(projectId: ID!): Project
+  listProjects(limit: Int, nextToken: String): ProjectConnection!
 }
 
 type Mutation {
   createDiagram(input: CreateDiagramInput!): Diagram!
   updateDiagram(input: UpdateDiagramInput!): Diagram
   deleteDiagram(id: ID!): Diagram
+  createProject(input: CreateProjectInput!): Project!
+  updateProject(input: UpdateProjectInput!): Project
+  deleteProject(projectId: ID!): Project
+  moveAllDiagramsToUncategorized(projectId: ID!): Int!
 }
 
 type Subscription {

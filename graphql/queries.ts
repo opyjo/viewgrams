@@ -11,13 +11,14 @@ export const GET_DIAGRAM = gql`
       createdAt
       updatedAt
       tags
+      projectId
     }
   }
 `;
 
 export const LIST_DIAGRAMS = gql`
-  query ListDiagrams($limit: Int, $nextToken: String) {
-    listDiagrams(limit: $limit, nextToken: $nextToken) {
+  query ListDiagrams($limit: Int, $nextToken: String, $projectId: String) {
+    listDiagrams(limit: $limit, nextToken: $nextToken, projectId: $projectId) {
       items {
         id
         title
@@ -26,6 +27,7 @@ export const LIST_DIAGRAMS = gql`
         createdAt
         updatedAt
         tags
+        projectId
       }
       nextToken
     }
@@ -33,8 +35,8 @@ export const LIST_DIAGRAMS = gql`
 `;
 
 export const SEARCH_DIAGRAMS = gql`
-  query SearchDiagrams($searchTerm: String!) {
-    searchDiagrams(searchTerm: $searchTerm) {
+  query SearchDiagrams($searchTerm: String!, $projectId: String) {
+    searchDiagrams(searchTerm: $searchTerm, projectId: $projectId) {
       id
       title
       description
@@ -42,6 +44,7 @@ export const SEARCH_DIAGRAMS = gql`
       createdAt
       updatedAt
       tags
+      projectId
     }
   }
 `;

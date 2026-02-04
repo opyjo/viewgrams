@@ -17,7 +17,7 @@ interface HeaderProps {
     saving?: boolean;
     userEmail?: string | null;
     saveDisabled?: boolean;
-    activePage?: 'editor' | 'saved';
+    activePage?: 'editor' | 'diagrams';
     showEditorActions?: boolean;
     className?: string;
 }
@@ -62,15 +62,15 @@ export default function Header({
                         Editor
                     </Link>
                     <Link
-                        href='/saved'
+                        href='/diagrams'
                         className={cn(
                             'px-3 py-1.5 rounded-full text-xs font-semibold transition-all',
-                            activePage === 'saved'
+                            activePage === 'diagrams'
                                 ? 'bg-white/15 text-white'
                                 : 'text-slate-300 hover:text-slate-100 hover:bg-white/5'
                         )}
                     >
-                        Saved
+                        Diagrams
                     </Link>
                 </nav>
             </div>
@@ -134,7 +134,7 @@ export default function Header({
                 {userEmail ? (
                     <button
                         onClick={onSignOut}
-                        className='hidden sm:flex items-center gap-2 pl-3 pr-4 py-2 border border-white/10 rounded-full text-xs text-slate-200 hover:bg-white/10 transition-all'
+                        className='flex items-center gap-2 pl-3 pr-4 py-2 border border-white/10 rounded-full text-xs text-slate-200 hover:bg-white/10 transition-all'
                     >
                         <span className='max-w-[120px] truncate'>{userEmail}</span>
                         <LogOut size={14} />
@@ -142,7 +142,7 @@ export default function Header({
                 ) : (
                     <button
                         onClick={onSignIn}
-                        className='hidden sm:flex items-center gap-2 pl-3 pr-4 py-2 border border-white/10 rounded-full text-xs text-slate-200 hover:bg-white/10 transition-all'
+                        className='flex items-center gap-2 pl-3 pr-4 py-2 border border-white/10 rounded-full text-xs text-slate-200 hover:bg-white/10 transition-all'
                     >
                         <span>Sign in</span>
                         <LogIn size={14} />

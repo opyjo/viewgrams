@@ -10,6 +10,7 @@ export const CREATE_DIAGRAM = gql`
       svgPreview
       createdAt
       updatedAt
+      projectId
     }
   }
 `;
@@ -24,6 +25,7 @@ export const UPDATE_DIAGRAM = gql`
       svgPreview
       createdAt
       updatedAt
+      projectId
     }
   }
 `;

@@ -2,14 +2,17 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import ProjectPicker from '@/components/projects/ProjectPicker';
 
 interface CodeEditorProps {
     value: string;
     onChange: (value: string) => void;
     title: string;
     description: string;
+    projectId?: string | null;
     onTitleChange: (value: string) => void;
     onDescriptionChange: (value: string) => void;
+    onProjectIdChange: (value: string | null) => void;
     className?: string;
 }
 
@@ -18,43 +21,51 @@ export default function CodeEditor({
     onChange,
     title,
     description,
+    projectId,
     onTitleChange,
     onDescriptionChange,
+    onProjectIdChange,
     className,
 }: CodeEditorProps) {
     return (
-        <div className={cn('flex flex-col h-full bg-[var(--panel)] text-slate-100 text-sm overflow-hidden border border-white/10 rounded-2xl shadow-xl shadow-black/30', className)}>
-            <div className='flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10 shrink-0'>
+        <div className={cn('flex flex-col h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 text-slate-700 text-sm overflow-hidden border border-slate-200 rounded-2xl shadow-lg', className)}>
+            <div className='flex items-center justify-between px-4 py-3 bg-white/50 border-b border-slate-200 shrink-0'>
                 <div>
-                    <p className='text-[10px] uppercase tracking-[0.3em] text-slate-400'>Editor</p>
-                    <p className='text-sm font-semibold text-slate-100'>Mermaid source</p>
+                    <p className='text-[10px] uppercase tracking-wider text-slate-500 font-semibold'>Editor</p>
+                    <p className='text-sm font-semibold text-slate-700'>Mermaid source</p>
                 </div>
-                <span className='text-[11px] text-slate-400'>Live render</span>
+                <span className='text-[10px] text-slate-400'>Live render</span>
             </div>
-            <div className='px-4 py-3 border-b border-white/10 bg-white/5 space-y-2'>
+            <div className='px-4 py-3 border-b border-slate-200 bg-white/40 space-y-2.5'>
                 <div>
-                    <label className='text-[10px] uppercase tracking-[0.3em] text-slate-400'>Title</label>
+                    <label className='text-[10px] uppercase tracking-wider text-slate-500 font-medium'>Title</label>
                     <input
                         value={title}
                         onChange={(e) => onTitleChange(e.target.value)}
-                        className='mt-1 w-full bg-slate-950/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300/30'
+                        className='mt-1 w-full bg-white/80 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent'
                         placeholder='Untitled diagram'
                     />
                 </div>
                 <div>
-                    <label className='text-[10px] uppercase tracking-[0.3em] text-slate-400'>Description</label>
+                    <label className='text-[10px] uppercase tracking-wider text-slate-500 font-medium'>Description</label>
                     <input
                         value={description}
                         onChange={(e) => onDescriptionChange(e.target.value)}
-                        className='mt-1 w-full bg-slate-950/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300/30'
+                        className='mt-1 w-full bg-white/80 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent'
                         placeholder='Optional summary'
+                    />
+                </div>
+                <div>
+                    <ProjectPicker
+                        selectedProjectId={projectId}
+                        onSelectProject={onProjectIdChange}
                     />
                 </div>
             </div>
             <textarea
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className='flex-1 w-full bg-transparent p-4 resize-none focus:outline-none focus:ring-2 focus:ring-amber-300/30 font-mono text-[13px] leading-relaxed'
+                className='flex-1 w-full bg-white/30 p-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 font-mono text-[13px] leading-relaxed text-slate-800 placeholder-slate-400'
                 spellCheck={false}
                 placeholder='Enter Mermaid code here...'
             />

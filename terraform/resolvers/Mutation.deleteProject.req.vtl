@@ -1,0 +1,14 @@
+{
+  "version": "2017-02-28",
+  "operation": "DeleteItem",
+  "key": {
+    "userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+    "projectId": $util.dynamodb.toDynamoDBJson($ctx.args.projectId)
+  },
+  "condition": {
+    "expression": "diagramCount = :zero",
+    "expressionValues": {
+      ":zero": $util.dynamodb.toDynamoDBJson(0)
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "version": "2017-02-28",
+  "operation": "Query",
+  "index": "UserProjectIndex",
+  "query": {
+    "expression": "userId = :userId AND projectId = :projectId",
+    "expressionValues": {
+      ":userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+      ":projectId": $util.dynamodb.toDynamoDBJson($ctx.args.projectId)
+    }
+  }
+}

@@ -11,6 +11,7 @@
     "code": $util.dynamodb.toDynamoDBJson($ctx.args.input.code),
     "svgPreview": $util.dynamodb.toDynamoDBJson($ctx.args.input.svgPreview),
     "tags": $util.dynamodb.toDynamoDBJson($ctx.args.input.tags),
+    "projectId": $util.dynamodb.toDynamoDBJson($ctx.args.input.projectId),
     "createdAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601()),
     "updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
   }

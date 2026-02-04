@@ -1,0 +1,39 @@
+#set($updates = {})
+#if($ctx.args.input.name)
+  $util.qr($updates.put("name", $util.dynamodb.toDynamoDBJson($ctx.args.input.name)))
+#end
+#if($ctx.args.input.description)
+  $util.qr($updates.put("description", $util.dynamodb.toDynamoDBJson($ctx.args.input.description)))
+#end
+#if($ctx.args.input.color)
+  $util.qr($updates.put("color", $util.dynamodb.toDynamoDBJson($ctx.args.input.color)))
+#end
+$util.qr($updates.put("updatedAt", $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())))
+
+{
+  "version": "2017-02-28",
+  "operation": "UpdateItem",
+  "key": {
+    "userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+    "projectId": $util.dynamodb.toDynamoDBJson($ctx.args.input.projectId)
+  },
+  "update": {
+    "expression": "SET #updatedAt = :updatedAt#foreach($entry in $updates.entrySet())#if($entry.key != "updatedAt"), #${entry.key} = :${entry.key}#end#end",
+    "expressionNames": {
+      "#updatedAt": "updatedAt"
+      #foreach($entry in $updates.entrySet())
+        #if($entry.key != "updatedAt")
+          ,"#${entry.key}": "${entry.key}"
+        #end
+      #end
+    },
+    "expressionValues": {
+      ":updatedAt": $updates.updatedAt
+      #foreach($entry in $updates.entrySet())
+        #if($entry.key != "updatedAt")
+          ,":${entry.key}": $entry.value
+        #end
+      #end
+    }
+  }
+}

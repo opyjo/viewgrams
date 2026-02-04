@@ -7,10 +7,12 @@ import Header from '@/components/ui/Header';
 import CodeEditor from '@/components/editor/CodeEditor';
 import PreviewPanel from '@/components/editor/PreviewPanel';
 import ExampleSelector from '@/components/ui/ExampleSelector';
+import QuickProjectCreate from '@/components/ui/QuickProjectCreate';
 import { defaultCode } from '@/lib/examples';
 import { useDebounce } from '@/hooks/use-debounce';
 import { getCurrentSession, signOut, type AuthSession } from '@/lib/auth';
 import AuthModal from '@/components/ui/AuthModal';
+import Modal from '@/components/ui/Modal';
 import { CREATE_DIAGRAM, UPDATE_DIAGRAM } from '@/graphql/mutations';
 import { GET_DIAGRAM } from '@/graphql/queries';
 
@@ -23,6 +25,7 @@ interface Diagram {
     updatedAt?: string;
     tags?: string[] | null;
     code: string;
+    projectId?: string | null;
 }
 
 interface CreateDiagramInput {
@@ -31,6 +34,7 @@ interface CreateDiagramInput {
     code: string;
     svgPreview?: string | null;
     tags?: string[] | null;
+    projectId?: string | null;
 }
 
 interface CreateDiagramResult {
@@ -45,6 +49,7 @@ export default function MermaidApp() {
     const [code, setCode] = useState(defaultCode);
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [projectId, setProjectId] = useState<string | null>(null);
     const [renderedSvg, setRenderedSvg] = useState<string | null>(null);
     const [activeDiagramId, setActiveDiagramId] = useState<string | null>(null);
     const debouncedCode = useDebounce(code, 500);
@@ -55,6 +60,7 @@ export default function MermaidApp() {
     const diagramParam = searchParams.get('diagram');
 
     const [authOpen, setAuthOpen] = useState(false);
+    const [saveSuccessOpen, setSaveSuccessOpen] = useState(false);
     const [session, setSession] = useState<AuthSession | null>(null);
     const [sessionLoading, setSessionLoading] = useState(true);
 
@@ -128,30 +134,6 @@ export default function MermaidApp() {
         }
     };
 
-    const uploadAsset = async (key: string, contentType: string, body: Blob) => {
-        const response = await fetch('/api/presign', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key, contentType }),
-        });
-
-        if (!response.ok) {
-            const errorPayload = await response.json().catch(() => ({}));
-            throw new Error(errorPayload.error || 'Unable to request upload URL.');
-        }
-
-        const payload = await response.json();
-        const uploadResponse = await fetch(payload.url, {
-            method: 'PUT',
-            headers: { 'Content-Type': contentType },
-            body,
-        });
-
-        if (!uploadResponse.ok) {
-            throw new Error('Upload failed.');
-        }
-    };
-
     const handleSave = async () => {
         setSaveError(null);
 
@@ -179,6 +161,7 @@ export default function MermaidApp() {
                 description: description.trim() || null,
                 code,
                 svgPreview: renderedSvg,
+                projectId: projectId || null,
             };
 
             let diagramId = activeDiagramId;
@@ -201,19 +184,7 @@ export default function MermaidApp() {
                 }
             }
 
-            if (diagramId) {
-                const baseKey = `users/${session.userId}/diagrams/${diagramId}`;
-                await uploadAsset(
-                    `${baseKey}/diagram.mmd`,
-                    'text/plain',
-                    new Blob([code], { type: 'text/plain' })
-                );
-                await uploadAsset(
-                    `${baseKey}/diagram.svg`,
-                    'image/svg+xml',
-                    new Blob([renderedSvg], { type: 'image/svg+xml' })
-                );
-            }
+            setSaveSuccessOpen(true);
 
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to save diagram.';
@@ -240,6 +211,7 @@ export default function MermaidApp() {
         setActiveDiagramId(null);
         setTitle('');
         setDescription('');
+        setProjectId(null);
         setCode(defaultCode);
         setRenderedSvg(null);
         setSaveError(null);
@@ -255,6 +227,7 @@ export default function MermaidApp() {
             setActiveDiagramId(diagram.id);
             setTitle(diagram.title || '');
             setDescription(diagram.description || '');
+            setProjectId(diagram.projectId || null);
             setCode(diagram.code || '');
         } catch (error) {
             console.error(error);
@@ -295,21 +268,30 @@ export default function MermaidApp() {
             />
 
             <main className='flex flex-1 overflow-hidden px-6 py-6'>
-                <div className='w-72 border border-white/10 glass rounded-3xl flex flex-col shrink-0 shadow-2xl'>
-                    <div className='p-4 border-b border-white/10'>
-                        <p className='text-xs font-semibold text-slate-500 uppercase tracking-[0.25em]'>Templates</p>
-                        <p className='text-[11px] text-slate-400 mt-1'>Pick a starting point or keep typing.</p>
+                <div className='w-72 bg-gradient-to-b from-slate-50 to-blue-50/30 border border-slate-200 rounded-2xl flex flex-col shrink-0 shadow-lg'>
+                    {/* Projects Section */}
+                    {session && (
+                        <div className='p-3 border-b border-slate-200 bg-white/40'>
+                            <p className='text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2'>Quick Create</p>
+                            <QuickProjectCreate />
+                        </div>
+                    )}
+
+                    {/* Templates Section */}
+                    <div className='p-3 border-b border-slate-200'>
+                        <p className='text-[10px] font-semibold text-slate-500 uppercase tracking-wider'>Templates</p>
+                        <p className='text-[10px] text-slate-400 mt-0.5'>Pick a starting point</p>
                     </div>
 
-                    <div className='flex-1 overflow-y-auto p-4 custom-scrollbar'>
+                    <div className='flex-1 overflow-y-auto p-3 custom-scrollbar'>
                         <ExampleSelector onSelect={setCode} />
                     </div>
 
-                    <div className='p-4 border-t border-white/10 bg-white/5'>
+                    <div className='p-3 border-t border-slate-200 bg-white/40'>
                         {saveError ? (
-                            <div className='rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700'>{saveError}</div>
+                            <div className='rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[10px] text-red-700'>{saveError}</div>
                         ) : (
-                            <div className='text-[11px] text-slate-400'>View saved diagrams on the Saved page.</div>
+                            <div className='text-[10px] text-slate-400'>View saved diagrams on the Saved page.</div>
                         )}
                     </div>
                 </div>
@@ -320,8 +302,10 @@ export default function MermaidApp() {
                         onChange={setCode}
                         title={title}
                         description={description}
+                        projectId={projectId}
                         onTitleChange={setTitle}
                         onDescriptionChange={setDescription}
+                        onProjectIdChange={setProjectId}
                         className='w-[42%] min-w-[320px] fade-up'
                     />
                     <PreviewPanel
@@ -338,6 +322,17 @@ export default function MermaidApp() {
                 onClose={() => setAuthOpen(false)}
                 onAuthSuccess={handleAuthSuccess}
             />
+
+            <Modal
+                open={saveSuccessOpen}
+                onClose={() => setSaveSuccessOpen(false)}
+                title="Success"
+            >
+                <div className="text-center py-4">
+                    <div className="text-green-400 text-5xl mb-4">✓</div>
+                    <p className="text-slate-300">Your diagram has been saved successfully!</p>
+                </div>
+            </Modal>
         </div>
     );
 }
