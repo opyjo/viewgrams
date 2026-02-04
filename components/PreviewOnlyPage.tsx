@@ -16,6 +16,10 @@ interface Diagram {
     code: string;
 }
 
+interface GetDiagramResult {
+    getDiagram: Diagram | null;
+}
+
 export default function PreviewOnlyPage() {
     const searchParams = useSearchParams();
     const diagramId = searchParams.get('diagram');
@@ -32,7 +36,7 @@ export default function PreviewOnlyPage() {
     const [sessionReady, setSessionReady] = useState(false);
     const [sessionAvailable, setSessionAvailable] = useState(false);
 
-    const [fetchDiagram] = useLazyQuery(GET_DIAGRAM, {
+    const [fetchDiagram] = useLazyQuery<GetDiagramResult, { id: string }>(GET_DIAGRAM, {
         fetchPolicy: 'network-only',
     });
 

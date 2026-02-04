@@ -24,6 +24,22 @@ interface Diagram {
     code: string;
 }
 
+interface CreateDiagramInput {
+    title: string;
+    description?: string | null;
+    code: string;
+    svgPreview?: string | null;
+    tags?: string[] | null;
+}
+
+interface CreateDiagramResult {
+    createDiagram: { id: string } | null;
+}
+
+interface GetDiagramResult {
+    getDiagram: Diagram | null;
+}
+
 export default function MermaidApp() {
     const [code, setCode] = useState(defaultCode);
     const [title, setTitle] = useState('');
@@ -47,11 +63,11 @@ export default function MermaidApp() {
     const [session, setSession] = useState<AuthSession | null>(null);
     const [sessionLoading, setSessionLoading] = useState(true);
 
-    const [fetchDiagram] = useLazyQuery(GET_DIAGRAM, {
+    const [fetchDiagram] = useLazyQuery<GetDiagramResult, { id: string }>(GET_DIAGRAM, {
         fetchPolicy: 'network-only',
     });
 
-    const [createDiagram] = useMutation(CREATE_DIAGRAM);
+    const [createDiagram] = useMutation<CreateDiagramResult, { input: CreateDiagramInput }>(CREATE_DIAGRAM);
     const [updateDiagram] = useMutation(UPDATE_DIAGRAM);
 
     useEffect(() => {

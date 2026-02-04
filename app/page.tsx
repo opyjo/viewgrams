@@ -1,5 +1,10 @@
+import { Suspense } from 'react';
 import MermaidApp from '@/components/MermaidApp';
 
 export default function Home() {
-    return <MermaidApp />;
+    return (
+        <Suspense fallback={null}>
+            <MermaidApp />
+        </Suspense>
+    );
 }

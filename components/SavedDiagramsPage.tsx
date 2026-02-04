@@ -19,6 +19,16 @@ interface DiagramSummary {
     updatedAt?: string;
 }
 
+interface ListDiagramsResult {
+    listDiagrams: {
+        items: DiagramSummary[];
+    };
+}
+
+interface SearchDiagramsResult {
+    searchDiagrams: DiagramSummary[];
+}
+
 export default function SavedDiagramsPage() {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
@@ -34,13 +44,13 @@ export default function SavedDiagramsPage() {
     const [confirmCode, setConfirmCode] = useState('');
     const [actionError, setActionError] = useState<string | null>(null);
 
-    const { data: listData, loading: listLoading, refetch: refetchList } = useQuery(LIST_DIAGRAMS, {
+    const { data: listData, loading: listLoading, refetch: refetchList } = useQuery<ListDiagramsResult, { limit: number }>(LIST_DIAGRAMS, {
         variables: { limit: 50 },
         skip: !session || debouncedSearch.trim().length > 0,
         fetchPolicy: 'network-only',
     });
 
-    const { data: searchData, loading: searchLoading, refetch: refetchSearch } = useQuery(SEARCH_DIAGRAMS, {
+    const { data: searchData, loading: searchLoading, refetch: refetchSearch } = useQuery<SearchDiagramsResult, { searchTerm: string }>(SEARCH_DIAGRAMS, {
         variables: { searchTerm: debouncedSearch.trim() },
         skip: !session || debouncedSearch.trim().length === 0,
         fetchPolicy: 'network-only',
