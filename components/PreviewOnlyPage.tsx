@@ -57,7 +57,7 @@ export default function PreviewOnlyPage() {
         getCurrentSession().then((session) => {
             if (!mounted) return;
             setSessionAvailable(!!session);
-            setUserEmail(session?.tokens?.idToken?.payload?.email as string || null);
+            setUserEmail(session?.email || null);
             setSessionReady(true);
         });
         return () => {
