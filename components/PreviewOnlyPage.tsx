@@ -35,6 +35,7 @@ export default function PreviewOnlyPage() {
     const panStart = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
     const [sessionReady, setSessionReady] = useState(false);
     const [sessionAvailable, setSessionAvailable] = useState(false);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
 
     const [fetchDiagram] = useLazyQuery<GetDiagramResult, { id: string }>(GET_DIAGRAM, {
         fetchPolicy: 'network-only',
@@ -56,6 +57,7 @@ export default function PreviewOnlyPage() {
         getCurrentSession().then((session) => {
             if (!mounted) return;
             setSessionAvailable(!!session);
+            setUserEmail(session?.tokens?.idToken?.payload?.email as string || null);
             setSessionReady(true);
         });
         return () => {
@@ -148,6 +150,8 @@ export default function PreviewOnlyPage() {
             <Header
                 activePage='editor'
                 showEditorActions={false}
+                status={sessionAvailable ? 'connected' : 'offline'}
+                userEmail={userEmail}
             />
             <main className='relative px-6 py-8'>
                 <div className='mx-auto max-w-6xl'>
