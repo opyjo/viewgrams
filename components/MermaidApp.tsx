@@ -45,6 +45,7 @@ export default function MermaidApp() {
     const [authPassword, setAuthPassword] = useState('');
     const [confirmCode, setConfirmCode] = useState('');
     const [session, setSession] = useState<AuthSession | null>(null);
+    const [sessionLoading, setSessionLoading] = useState(true);
 
     const [fetchDiagram] = useLazyQuery(GET_DIAGRAM, {
         fetchPolicy: 'network-only',
@@ -58,6 +59,7 @@ export default function MermaidApp() {
         getCurrentSession().then((current) => {
             if (isMounted) {
                 setSession(current);
+                setSessionLoading(false);
             }
         });
         return () => {
@@ -206,6 +208,19 @@ export default function MermaidApp() {
         }
     };
 
+    const handleView = () => {
+        if (typeof window !== 'undefined') {
+            const resolvedTitle = title.trim() || `Untitled Diagram ${new Date().toLocaleString()}`;
+            sessionStorage.setItem('preview:code', code);
+            sessionStorage.setItem('preview:title', resolvedTitle);
+        }
+        if (activeDiagramId) {
+            router.push(`/preview?diagram=${activeDiagramId}`);
+        } else {
+            router.push('/preview');
+        }
+    };
+
     const handleNew = () => {
         setActiveDiagramId(null);
         setTitle('');
@@ -233,13 +248,20 @@ export default function MermaidApp() {
 
     useEffect(() => {
         if (!diagramParam) return;
+        if (sessionLoading) return;
         if (!session) {
             openAuth('signIn');
             return;
         }
         if (diagramParam === activeDiagramId) return;
         handleSelectDiagram(diagramParam);
-    }, [diagramParam, session, activeDiagramId]);
+    }, [diagramParam, session, activeDiagramId, sessionLoading]);
+
+    useEffect(() => {
+        if (session && authOpen) {
+            setAuthOpen(false);
+        }
+    }, [session, authOpen]);
 
     const handleSignIn = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -298,7 +320,8 @@ export default function MermaidApp() {
     };
 
     return (
-        <div className='flex flex-col h-screen overflow-hidden bg-slate-50'>
+        <div className='relative flex flex-col h-screen overflow-hidden bg-slate-50'>
+            <div className='aurora' />
             <Header
                 onSave={handleSave}
                 onExport={handleExport}
@@ -312,9 +335,9 @@ export default function MermaidApp() {
                 activePage='editor'
             />
 
-            <main className='flex flex-1 overflow-hidden'>
-                <div className='w-64 border-r border-slate-200 bg-white flex flex-col shrink-0'>
-                    <div className='p-4 border-b border-slate-100'>
+            <main className='flex flex-1 overflow-hidden px-6 py-6'>
+                <div className='w-72 border border-white/10 glass rounded-3xl flex flex-col shrink-0 shadow-2xl'>
+                    <div className='p-4 border-b border-white/10'>
                         <p className='text-xs font-semibold text-slate-500 uppercase tracking-[0.25em]'>Templates</p>
                         <p className='text-[11px] text-slate-400 mt-1'>Pick a starting point or keep typing.</p>
                     </div>
@@ -323,7 +346,7 @@ export default function MermaidApp() {
                         <ExampleSelector onSelect={setCode} />
                     </div>
 
-                    <div className='p-4 border-t border-slate-100 bg-slate-50/50'>
+                    <div className='p-4 border-t border-white/10 bg-white/5'>
                         {saveError ? (
                             <div className='rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-700'>{saveError}</div>
                         ) : (
@@ -332,7 +355,7 @@ export default function MermaidApp() {
                     </div>
                 </div>
 
-                <div className='flex-1 flex overflow-hidden'>
+                <div className='flex-1 flex overflow-hidden gap-6 pl-6'>
                     <CodeEditor
                         value={code}
                         onChange={setCode}
@@ -340,12 +363,13 @@ export default function MermaidApp() {
                         description={description}
                         onTitleChange={setTitle}
                         onDescriptionChange={setDescription}
-                        className='w-[40%] min-w-[300px]'
+                        className='w-[42%] min-w-[320px] fade-up'
                     />
                     <PreviewPanel
                         code={debouncedCode}
-                        className='flex-1'
+                        className='flex-1 fade-up'
                         onRendered={setRenderedSvg}
+                        onView={handleView}
                     />
                 </div>
             </main>

@@ -3,15 +3,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { renderMermaid } from '@/lib/mermaid-utils';
 import { cn } from '@/lib/utils';
-import { AlertCircle, Loader2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { AlertCircle, Eye, Loader2, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface PreviewPanelProps {
     code: string;
     className?: string;
     onRendered?: (svg: string | null) => void;
+    onView?: () => void;
 }
 
-export default function PreviewPanel({ code, className, onRendered }: PreviewPanelProps) {
+export default function PreviewPanel({ code, className, onRendered, onView }: PreviewPanelProps) {
     const [svg, setSvg] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -52,6 +53,18 @@ export default function PreviewPanel({ code, className, onRendered }: PreviewPan
             {/* Toolbar */}
             <div className='absolute bottom-6 right-6 flex items-center gap-2 z-10'>
                 <div className='flex items-center bg-slate-900/70 backdrop-blur-md border border-white/10 rounded-lg shadow-lg overflow-hidden'>
+                    {onView ? (
+                        <>
+                            <button
+                                onClick={onView}
+                                className='p-2 hover:bg-white/10 transition-colors text-slate-200'
+                                title='Open focus view'
+                            >
+                                <Eye size={18} />
+                            </button>
+                            <div className='w-[1px] h-4 bg-white/10' />
+                        </>
+                    ) : null}
                     <button
                         onClick={handleZoomOut}
                         className='p-2 hover:bg-white/10 transition-colors text-slate-200'

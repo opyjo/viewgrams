@@ -2,13 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Cloud, Download, LogIn, LogOut, Plus, Save, Sparkles } from 'lucide-react';
+import { Cloud, Download, Eye, LogIn, LogOut, Plus, Save, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
     title?: string;
     onSave?: () => void;
     onExport?: (type: 'svg' | 'png') => void;
+    onView?: () => void;
     onNew?: () => void;
     onSignOut?: () => void;
     onSignIn?: () => void;
@@ -24,6 +25,7 @@ interface HeaderProps {
 export default function Header({
     onSave,
     onExport,
+    onView,
     onNew,
     onSignOut,
     onSignIn,
@@ -91,6 +93,15 @@ export default function Header({
                             >
                                 <Plus size={16} />
                                 <span className='hidden sm:inline'>New</span>
+                            </button>
+                        )}
+                        {onView && (
+                            <button
+                                onClick={onView}
+                                className='flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-white/10 rounded-full transition-all text-sm font-medium'
+                            >
+                                <Eye size={16} />
+                                <span className='hidden sm:inline'>View</span>
                             </button>
                         )}
                         {onExport && (

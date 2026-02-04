@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@apollo/client/react';
 import Header from '@/components/ui/Header';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -20,6 +20,7 @@ interface DiagramSummary {
 }
 
 export default function SavedDiagramsPage() {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearch = useDebounce(searchTerm, 400);
     const [session, setSession] = useState<AuthSession | null>(null);
@@ -153,8 +154,13 @@ export default function SavedDiagramsPage() {
         setSession(null);
     };
 
+    const handleOpenDiagram = (id: string) => {
+        router.push(`/?diagram=${id}`);
+    };
+
     return (
-        <div className='flex flex-col min-h-screen bg-slate-50'>
+        <div className='relative flex flex-col min-h-screen bg-slate-50'>
+            <div className='aurora' />
             <Header
                 onSignOut={handleSignOut}
                 onSignIn={() => openAuth('signIn')}
@@ -164,22 +170,23 @@ export default function SavedDiagramsPage() {
                 showEditorActions={false}
             />
 
-            <main className='flex-1 px-6 py-8'>
-                <div className='mx-auto max-w-4xl'>
-                    <div className='flex flex-col gap-2 mb-6'>
-                        <h2 className='text-2xl font-semibold text-slate-900'>Saved diagrams</h2>
+            <main className='flex-1 px-6 py-10'>
+                <div className='mx-auto max-w-5xl'>
+                    <div className='flex flex-col gap-2 mb-6 fade-up'>
+                        <span className='text-xs font-semibold uppercase tracking-[0.4em] text-slate-400'>Library</span>
+                        <h2 className='text-3xl font-semibold text-slate-900'>Saved diagrams</h2>
                         <p className='text-sm text-slate-500'>Browse your saved Mermaid diagrams and jump back into editing.</p>
                     </div>
 
                     <div className='flex flex-col gap-4'>
-                        <div className='relative'>
+                        <div className='relative fade-up'>
                             <Search className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400' size={14} />
                             <input
                                 type='text'
                                 placeholder='Search diagrams...'
                                 value={searchTerm}
                                 onChange={(event) => setSearchTerm(event.target.value)}
-                                className='w-full pl-9 pr-3 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none'
+                                className='w-full pl-9 pr-3 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none shadow-sm'
                             />
                         </div>
 
@@ -190,7 +197,7 @@ export default function SavedDiagramsPage() {
                         )}
 
                         {!session ? (
-                            <div className='rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 flex items-center justify-between'>
+                            <div className='rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500 flex items-center justify-between shadow-sm'>
                                 <span>Sign in to see your saved diagrams.</span>
                                 <button
                                     onClick={() => openAuth('signIn')}
@@ -200,7 +207,7 @@ export default function SavedDiagramsPage() {
                                 </button>
                             </div>
                         ) : (
-                            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+                            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 fade-up'>
                                 {(listLoading || searchLoading) && (
                                     <div className='flex items-center justify-center gap-2 text-xs text-slate-400 py-6 sm:col-span-2 lg:col-span-3'>
                                         <Loader2 size={14} className='animate-spin' />
@@ -217,7 +224,16 @@ export default function SavedDiagramsPage() {
                                 {diagrams.map((diagram) => (
                                     <div
                                         key={diagram.id}
-                                        className='p-3 border border-slate-200 rounded-2xl bg-white shadow-sm hover:shadow-md hover:border-blue-200 transition-all'
+                                        onClick={() => handleOpenDiagram(diagram.id)}
+                                        onKeyDown={(event) => {
+                                            if (event.key === 'Enter' || event.key === ' ') {
+                                                event.preventDefault();
+                                                handleOpenDiagram(diagram.id);
+                                            }
+                                        }}
+                                        role='button'
+                                        tabIndex={0}
+                                        className='p-3 border border-slate-200 rounded-2xl bg-white shadow-sm hover:shadow-md hover:border-blue-200 transition-all card-sheen'
                                     >
                                         <div className='flex items-start justify-between gap-3 mb-2'>
                                             <div>
@@ -227,15 +243,21 @@ export default function SavedDiagramsPage() {
                                                 ) : null}
                                             </div>
                                             <div className='flex items-center gap-1'>
-                                                <Link
-                                                    href={`/?diagram=${diagram.id}`}
+                                                <button
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        handleOpenDiagram(diagram.id);
+                                                    }}
                                                     className='p-1.5 rounded-md text-slate-300 hover:text-blue-500 hover:bg-slate-50 transition-colors'
                                                     title='Open diagram'
                                                 >
                                                     <ExternalLink size={12} />
-                                                </Link>
+                                                </button>
                                                 <button
-                                                    onClick={() => handleDelete(diagram.id)}
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        handleDelete(diagram.id);
+                                                    }}
                                                     className='p-1.5 rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors'
                                                     title='Delete diagram'
                                                 >
