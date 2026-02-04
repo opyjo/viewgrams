@@ -1,5 +1,10 @@
+import { Suspense } from 'react';
 import SavedDiagramsPage from '@/components/SavedDiagramsPage';
 
 export default function SavedPage() {
-    return <SavedDiagramsPage />;
+    return (
+        <Suspense fallback={null}>
+            <SavedDiagramsPage />
+        </Suspense>
+    );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useLazyQuery, useMutation } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/ui/Header';
@@ -86,7 +86,16 @@ export default function MermaidApp() {
     const openAuth = (mode: 'signIn' | 'signUp' | 'confirm') => {
         setAuthMode(mode);
         setAuthError(null);
+        setAuthPassword('');
+        setConfirmCode('');
         setAuthOpen(true);
+    };
+
+    const closeAuth = () => {
+        setAuthOpen(false);
+        setAuthError(null);
+        setAuthPassword('');
+        setConfirmCode('');
     };
 
     const handleExport = (type: 'svg' | 'png') => {
@@ -103,20 +112,21 @@ export default function MermaidApp() {
             document.body.appendChild(downloadLink);
             downloadLink.click();
             document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(svgUrl);
         } else {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const data = new XMLSerializer().serializeToString(svgElement);
-            const win = window.URL || window.webkitURL || window;
             const img = new Image();
             const blob = new Blob([data], { type: 'image/svg+xml' });
-            const url = win.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
 
             img.onload = function () {
                 canvas.width = img.width * 2;
                 canvas.height = img.height * 2;
                 ctx?.scale(2, 2);
                 ctx?.drawImage(img, 0, 0);
+                URL.revokeObjectURL(url);
                 const pngUrl = canvas.toDataURL('image/png');
                 const downloadLink = document.createElement('a');
                 downloadLink.href = pngUrl;
@@ -247,7 +257,7 @@ export default function MermaidApp() {
         router.replace('/');
     };
 
-    const handleSelectDiagram = async (id: string) => {
+    const handleSelectDiagram = useCallback(async (id: string) => {
         if (!session) return;
         try {
             const result = await fetchDiagram({ variables: { id } });
@@ -260,7 +270,7 @@ export default function MermaidApp() {
         } catch (error) {
             console.error(error);
         }
-    };
+    }, [session, fetchDiagram]);
 
     useEffect(() => {
         if (!diagramParam) return;
@@ -271,7 +281,7 @@ export default function MermaidApp() {
         }
         if (diagramParam === activeDiagramId) return;
         handleSelectDiagram(diagramParam);
-    }, [diagramParam, session, activeDiagramId, sessionLoading]);
+    }, [diagramParam, session, activeDiagramId, sessionLoading, handleSelectDiagram]);
 
     useEffect(() => {
         if (session && authOpen) {
@@ -400,7 +410,7 @@ export default function MermaidApp() {
                                 {authMode === 'confirm' && 'Confirm sign up'}
                             </h2>
                             <button
-                                onClick={() => setAuthOpen(false)}
+                                onClick={closeAuth}
                                 className='text-slate-400 hover:text-slate-200'
                             >
                                 ✕

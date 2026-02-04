@@ -18,6 +18,12 @@ export default function PreviewPanel({ code, className, onRendered, onView }: Pr
     const [loading, setLoading] = useState(false);
     const [zoom, setZoom] = useState(1);
     const containerRef = useRef<HTMLDivElement>(null);
+    const onRenderedRef = useRef(onRendered);
+
+    // Keep ref in sync with prop
+    useEffect(() => {
+        onRenderedRef.current = onRendered;
+    }, [onRendered]);
 
     useEffect(() => {
         const updateDiagram = async () => {
@@ -32,17 +38,17 @@ export default function PreviewPanel({ code, className, onRendered, onView }: Pr
 
             if (renderError) {
                 setError(renderError);
-                onRendered?.(null);
+                onRenderedRef.current?.(null);
             } else {
                 setSvg(renderedSvg);
                 setError(null);
-                onRendered?.(renderedSvg);
+                onRenderedRef.current?.(renderedSvg);
             }
             setLoading(false);
         };
 
         updateDiagram();
-    }, [code, onRendered]);
+    }, [code]);
 
     const handleZoomIn = () => setZoom((z) => Math.min(z + 0.2, 3));
     const handleZoomOut = () => setZoom((z) => Math.max(z - 0.2, 0.5));

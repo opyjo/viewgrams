@@ -80,7 +80,16 @@ export default function SavedDiagramsPage() {
     const openAuth = (mode: 'signIn' | 'signUp' | 'confirm') => {
         setAuthMode(mode);
         setAuthError(null);
+        setAuthPassword('');
+        setConfirmCode('');
         setAuthOpen(true);
+    };
+
+    const closeAuth = () => {
+        setAuthOpen(false);
+        setAuthError(null);
+        setAuthPassword('');
+        setConfirmCode('');
     };
 
     const formatTimestamp = (value?: string) => {
@@ -309,7 +318,7 @@ export default function SavedDiagramsPage() {
                                 {authMode === 'confirm' && 'Confirm sign up'}
                             </h2>
                             <button
-                                onClick={() => setAuthOpen(false)}
+                                onClick={closeAuth}
                                 className='text-slate-400 hover:text-slate-200'
                             >
                                 ✕
