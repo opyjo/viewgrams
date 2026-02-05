@@ -137,6 +137,8 @@ export default function Header({
                         className='flex items-center gap-2 pl-3 pr-4 py-2 border border-white/10 rounded-full text-xs text-slate-200 hover:bg-white/10 transition-all'
                     >
                         <span className='max-w-[120px] truncate'>{userEmail}</span>
+                        <span className='hidden sm:inline text-slate-400'>•</span>
+                        <span className='hidden sm:inline'>Sign Out</span>
                         <LogOut size={14} />
                     </button>
                 ) : (
