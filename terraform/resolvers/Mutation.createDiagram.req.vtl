@@ -1,16 +1,16 @@
-#set($attributeValues = {
-  "title": $util.dynamodb.toDynamoDBJson($ctx.args.input.title),
-  "description": $util.dynamodb.toDynamoDBJson($ctx.args.input.description),
-  "code": $util.dynamodb.toDynamoDBJson($ctx.args.input.code),
-  "svgPreview": $util.dynamodb.toDynamoDBJson($ctx.args.input.svgPreview),
-  "tags": $util.dynamodb.toDynamoDBJson($ctx.args.input.tags),
-  "createdAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601()),
-  "updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
-})
+## Build attributes map with plain values, then convert to DynamoDB format
+#set($attrs = {})
+$util.qr($attrs.put("title", $ctx.args.input.title))
+$util.qr($attrs.put("description", $ctx.args.input.description))
+$util.qr($attrs.put("code", $ctx.args.input.code))
+$util.qr($attrs.put("svgPreview", $ctx.args.input.svgPreview))
+$util.qr($attrs.put("tags", $ctx.args.input.tags))
+$util.qr($attrs.put("createdAt", $util.time.nowISO8601()))
+$util.qr($attrs.put("updatedAt", $util.time.nowISO8601()))
 
 ## Only include projectId if it's not null (GSI cannot index NULL values)
 #if($ctx.args.input.projectId)
-  $util.qr($attributeValues.put("projectId", $util.dynamodb.toDynamoDBJson($ctx.args.input.projectId)))
+  $util.qr($attrs.put("projectId", $ctx.args.input.projectId))
 #end
 
 {
@@ -20,5 +20,5 @@
     "userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
     "id": $util.dynamodb.toDynamoDBJson($util.autoId())
   },
-  "attributeValues": $util.toJson($attributeValues)
+  "attributeValues": $util.dynamodb.toMapValuesJson($attrs)
 }

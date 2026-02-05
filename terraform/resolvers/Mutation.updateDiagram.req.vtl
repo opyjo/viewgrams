@@ -1,19 +1,18 @@
-## Build update expression and values, handling projectId separately to avoid GSI NULL errors
-#set($expressionValues = {
-  ":title": $util.dynamodb.toDynamoDBJson($ctx.args.input.title),
-  ":description": $util.dynamodb.toDynamoDBJson($ctx.args.input.description),
-  ":code": $util.dynamodb.toDynamoDBJson($ctx.args.input.code),
-  ":svgPreview": $util.dynamodb.toDynamoDBJson($ctx.args.input.svgPreview),
-  ":tags": $util.dynamodb.toDynamoDBJson($ctx.args.input.tags),
-  ":updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
-})
+## Build expression values map with plain values, then convert to DynamoDB format
+#set($expValues = {})
+$util.qr($expValues.put(":title", $ctx.args.input.title))
+$util.qr($expValues.put(":description", $ctx.args.input.description))
+$util.qr($expValues.put(":code", $ctx.args.input.code))
+$util.qr($expValues.put(":svgPreview", $ctx.args.input.svgPreview))
+$util.qr($expValues.put(":tags", $ctx.args.input.tags))
+$util.qr($expValues.put(":updatedAt", $util.time.nowISO8601()))
 
 ## Handle projectId: SET if not null, REMOVE if null (GSI cannot index NULL values)
 #if($ctx.args.input.projectId)
-  #set($setExpression = "set title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, projectId = :projectId, updatedAt = :updatedAt")
-  $util.qr($expressionValues.put(":projectId", $util.dynamodb.toDynamoDBJson($ctx.args.input.projectId)))
+  #set($setExpression = "SET title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, projectId = :projectId, updatedAt = :updatedAt")
+  $util.qr($expValues.put(":projectId", $ctx.args.input.projectId))
 #else
-  #set($setExpression = "set title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, updatedAt = :updatedAt REMOVE projectId")
+  #set($setExpression = "SET title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, updatedAt = :updatedAt REMOVE projectId")
 #end
 
 {
@@ -25,6 +24,6 @@
   },
   "update": {
     "expression": "$setExpression",
-    "expressionValues": $util.toJson($expressionValues)
+    "expressionValues": $util.dynamodb.toMapValuesJson($expValues)
   }
 }
