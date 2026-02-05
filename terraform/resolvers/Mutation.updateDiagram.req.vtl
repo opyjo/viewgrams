@@ -1,3 +1,21 @@
+## Build update expression and values, handling projectId separately to avoid GSI NULL errors
+#set($expressionValues = {
+  ":title": $util.dynamodb.toDynamoDBJson($ctx.args.input.title),
+  ":description": $util.dynamodb.toDynamoDBJson($ctx.args.input.description),
+  ":code": $util.dynamodb.toDynamoDBJson($ctx.args.input.code),
+  ":svgPreview": $util.dynamodb.toDynamoDBJson($ctx.args.input.svgPreview),
+  ":tags": $util.dynamodb.toDynamoDBJson($ctx.args.input.tags),
+  ":updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
+})
+
+## Handle projectId: SET if not null, REMOVE if null (GSI cannot index NULL values)
+#if($ctx.args.input.projectId)
+  #set($setExpression = "set title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, projectId = :projectId, updatedAt = :updatedAt")
+  $util.qr($expressionValues.put(":projectId", $util.dynamodb.toDynamoDBJson($ctx.args.input.projectId)))
+#else
+  #set($setExpression = "set title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, updatedAt = :updatedAt REMOVE projectId")
+#end
+
 {
   "version": "2017-02-28",
   "operation": "UpdateItem",
@@ -6,15 +24,7 @@
     "id": $util.dynamodb.toDynamoDBJson($ctx.args.input.id)
   },
   "update": {
-    "expression": "set title = :title, description = :description, code = :code, svgPreview = :svgPreview, tags = :tags, projectId = :projectId, updatedAt = :updatedAt",
-    "expressionValues": {
-      ":title": $util.dynamodb.toDynamoDBJson($ctx.args.input.title),
-      ":description": $util.dynamodb.toDynamoDBJson($ctx.args.input.description),
-      ":code": $util.dynamodb.toDynamoDBJson($ctx.args.input.code),
-      ":svgPreview": $util.dynamodb.toDynamoDBJson($ctx.args.input.svgPreview),
-      ":tags": $util.dynamodb.toDynamoDBJson($ctx.args.input.tags),
-      ":projectId": $util.dynamodb.toDynamoDBJson($ctx.args.input.projectId),
-      ":updatedAt": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
-    }
+    "expression": "$setExpression",
+    "expressionValues": $util.toJson($expressionValues)
   }
 }
