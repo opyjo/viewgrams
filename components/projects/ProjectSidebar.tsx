@@ -122,8 +122,7 @@ export default function ProjectSidebar({
                   <div
                     className="w-2 h-2 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-offset-white"
                     style={{
-                      backgroundColor: project.color || '#3b82f6',
-                      ringColor: isSelected ? 'rgba(255,255,255,0.2)' : 'transparent'
+                      backgroundColor: project.color || '#3b82f6'
                     }}
                   />
                   <span className="text-sm font-medium truncate">{project.name}</span>
@@ -143,7 +142,9 @@ export default function ProjectSidebar({
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        handleEditProject(e, project);
+                        e.stopPropagation();
+                        setEditingProject(project);
+                        setModalOpen(true);
                       }
                     }}
                     className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded cursor-pointer ${
