@@ -2,8 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Cloud, Download, Eye, LogIn, LogOut, Plus, Save, Sparkles } from 'lucide-react';
+import { Cloud, Copy, Eye, LogIn, LogOut, Plus, Save, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ExportDropdown from './ExportDropdown';
+import VersionHistory from '@/components/editor/VersionHistory';
 
 interface HeaderProps {
     title?: string;
@@ -13,6 +15,9 @@ interface HeaderProps {
     onNew?: () => void;
     onSignOut?: () => void;
     onSignIn?: () => void;
+    onDuplicate?: () => void;
+    diagramId?: string | null;
+    onRestoreVersion?: (code: string) => void;
     status?: 'connected' | 'offline';
     saving?: boolean;
     userEmail?: string | null;
@@ -29,6 +34,9 @@ export default function Header({
     onNew,
     onSignOut,
     onSignIn,
+    onDuplicate,
+    diagramId,
+    onRestoreVersion,
     status = 'offline',
     saving,
     userEmail,
@@ -39,17 +47,17 @@ export default function Header({
 }: HeaderProps) {
     const showActions = showEditorActions && (onNew || onExport || onSave);
     return (
-        <header className={cn('h-16 border-b border-white/10 bg-slate-950/40 backdrop-blur-xl px-6 flex items-center justify-between shrink-0 sticky top-0 z-30', className)}>
+        <header className={cn('h-16 border-b border-white/10 bg-slate-950/40 backdrop-blur-xl px-4 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30', className)}>
             <div className='flex items-center gap-3'>
                 <div className='w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-200 to-cyan-300 text-slate-950 shadow-lg shadow-amber-500/30 flex items-center justify-center'>
                     <Sparkles size={22} />
                 </div>
-                <div>
+                <div className="hidden sm:block">
                     <p className='text-[10px] font-semibold text-slate-300 uppercase tracking-[0.35em]'>Mermaid Studio</p>
                     <h1 className='text-lg font-semibold text-slate-100 leading-tight font-[var(--font-display)]'>Diagram Command</h1>
                 </div>
 
-                <nav className='flex items-center gap-2 ml-4 sm:ml-6'>
+                <nav className='flex items-center gap-2 ml-2 sm:ml-6'>
                     <Link
                         href='/'
                         className={cn(
@@ -75,14 +83,14 @@ export default function Header({
                 </nav>
             </div>
 
-            <div className='flex items-center gap-2'>
-                <div className='hidden md:flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/60 px-3 py-1 text-xs text-slate-300'>
+            <div className='flex items-center gap-1 md:gap-2'>
+                <div className='hidden lg:flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/60 px-3 py-1 text-xs text-slate-300'>
                     <span className={`h-2 w-2 rounded-full ${status === 'connected' ? 'bg-emerald-400' : 'bg-amber-400'}`} />
                     <Cloud size={12} />
                     <span>{status === 'connected' ? 'Cloud synced' : 'Offline mode'}</span>
                 </div>
 
-                <div className='h-8 w-[1px] bg-white/10 mx-2' />
+                <div className='hidden md:block h-8 w-[1px] bg-white/10 mx-1' />
 
                 {showActions && (
                     <>
@@ -95,24 +103,32 @@ export default function Header({
                                 <span className='hidden sm:inline'>New</span>
                             </button>
                         )}
+                        {onDuplicate && (
+                            <button
+                                onClick={onDuplicate}
+                                className='flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-white/10 rounded-full transition-all text-sm font-medium'
+                                title="Duplicate diagram"
+                            >
+                                <Copy size={16} />
+                                <span className='hidden lg:inline'>Duplicate</span>
+                            </button>
+                        )}
                         {onView && (
                             <button
                                 onClick={onView}
-                                className='flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-white/10 rounded-full transition-all text-sm font-medium'
+                                className='hidden sm:flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-white/10 rounded-full transition-all text-sm font-medium'
                             >
                                 <Eye size={16} />
-                                <span className='hidden sm:inline'>View</span>
+                                <span className='hidden lg:inline'>View</span>
                             </button>
                         )}
-                        {onExport && (
-                            <button
-                                onClick={() => onExport('svg')}
-                                className='flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-white/10 rounded-full transition-all text-sm font-medium'
-                            >
-                                <Download size={16} />
-                                <span className='hidden sm:inline'>Export</span>
-                            </button>
+                        {onRestoreVersion && diagramId && (
+                            <VersionHistory
+                                diagramId={diagramId}
+                                onRestore={onRestoreVersion}
+                            />
                         )}
+                        {onExport && <ExportDropdown onExport={onExport} />}
                         {onSave && (
                             <button
                                 onClick={onSave}
@@ -125,7 +141,7 @@ export default function Header({
                                 )}
                             >
                                 <Save size={16} />
-                                <span>{saving ? 'Saving…' : 'Save'}</span>
+                                <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save'}</span>
                             </button>
                         )}
                     </>
@@ -136,8 +152,8 @@ export default function Header({
                         onClick={onSignOut}
                         className='flex items-center gap-2 pl-3 pr-4 py-2 border border-white/10 rounded-full text-xs text-slate-200 hover:bg-white/10 transition-all'
                     >
-                        <span className='max-w-[120px] truncate'>{userEmail}</span>
-                        <span className='hidden sm:inline text-slate-400'>•</span>
+                        <span className='max-w-[80px] md:max-w-[120px] truncate'>{userEmail}</span>
+                        <span className='hidden sm:inline text-slate-400'>&#183;</span>
                         <span className='hidden sm:inline'>Sign Out</span>
                         <LogOut size={14} />
                     </button>

@@ -1,24 +1,16 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLazyQuery } from '@apollo/client/react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/ui/Header';
 import { renderMermaid } from '@/lib/mermaid-utils';
-import { getCurrentSession } from '@/lib/auth';
+import { sanitizeSvg } from '@/lib/sanitize';
+import { useAuth } from '@/hooks/useAuth';
 import { GET_DIAGRAM } from '@/graphql/queries';
 import { ArrowLeft, Hand, Loader2, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
-
-interface Diagram {
-    id: string;
-    title: string;
-    code: string;
-}
-
-interface GetDiagramResult {
-    getDiagram: Diagram | null;
-}
+import type { Diagram, GetDiagramResult } from '@/types/diagram';
 
 export default function PreviewOnlyPage() {
     const searchParams = useSearchParams();
@@ -33,9 +25,9 @@ export default function PreviewOnlyPage() {
     const [panMode, setPanMode] = useState(false);
     const [isPanning, setIsPanning] = useState(false);
     const panStart = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
-    const [sessionReady, setSessionReady] = useState(false);
-    const [sessionAvailable, setSessionAvailable] = useState(false);
-    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const { session, loading: sessionLoading } = useAuth();
 
     const [fetchDiagram] = useLazyQuery<GetDiagramResult, { id: string }>(GET_DIAGRAM, {
         fetchPolicy: 'network-only',
@@ -53,22 +45,9 @@ export default function PreviewOnlyPage() {
     }, []);
 
     useEffect(() => {
-        let mounted = true;
-        getCurrentSession().then((session) => {
-            if (!mounted) return;
-            setSessionAvailable(!!session);
-            setUserEmail(session?.email || null);
-            setSessionReady(true);
-        });
-        return () => {
-            mounted = false;
-        };
-    }, []);
-
-    useEffect(() => {
         if (!diagramId) return;
-        if (!sessionReady) return;
-        if (!sessionAvailable) return;
+        if (sessionLoading) return;
+        if (!session) return;
         if (code) return;
 
         fetchDiagram({ variables: { id: diagramId } })
@@ -82,7 +61,7 @@ export default function PreviewOnlyPage() {
                 const message = err instanceof Error ? err.message : 'Unable to load diagram.';
                 setError(message);
             });
-    }, [diagramId, sessionReady, sessionAvailable, code, fetchDiagram]);
+    }, [diagramId, sessionLoading, session, code, fetchDiagram]);
 
     useEffect(() => {
         if (!code.trim()) {
@@ -96,7 +75,7 @@ export default function PreviewOnlyPage() {
                 setSvg(null);
             } else {
                 setError(null);
-                setSvg(rendered);
+                setSvg(rendered ? sanitizeSvg(rendered) : null);
             }
             setLoading(false);
         });
@@ -144,16 +123,32 @@ export default function PreviewOnlyPage() {
         panStart.current = null;
     };
 
+    // Ctrl+Scroll zoom
+    const handleWheel = useCallback((e: WheelEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            setZoom((z) => Math.min(3, Math.max(0.5, z + delta)));
+        }
+    }, []);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        return () => container.removeEventListener('wheel', handleWheel);
+    }, [handleWheel]);
+
     return (
         <div className='relative min-h-screen bg-slate-50'>
             <div className='aurora' />
             <Header
                 activePage='editor'
                 showEditorActions={false}
-                status={sessionAvailable ? 'connected' : 'offline'}
-                userEmail={userEmail}
+                status={session ? 'connected' : 'offline'}
+                userEmail={session?.email || null}
             />
-            <main className='relative px-6 py-8'>
+            <main className='relative px-4 md:px-6 py-8'>
                 <div className='mx-auto max-w-6xl'>
                     <div className='flex items-center justify-between mb-6'>
                         <div>
@@ -169,13 +164,13 @@ export default function PreviewOnlyPage() {
                         </Link>
                     </div>
 
-                    {!sessionAvailable && diagramId && sessionReady && !code && (
+                    {!session && diagramId && !sessionLoading && !code && (
                         <div className='rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500'>
                             Sign in to view this saved diagram.
                         </div>
                     )}
 
-                    <div className='relative min-h-[70vh] rounded-[28px] border border-slate-200 bg-white shadow-xl overflow-hidden'>
+                    <div ref={containerRef} className='relative min-h-[70vh] rounded-[28px] border border-slate-200 bg-white shadow-xl overflow-hidden'>
                         <div className='absolute bottom-6 right-6 flex items-center gap-2 z-10'>
                             <div className='flex items-center bg-slate-900/70 backdrop-blur-md border border-white/10 rounded-lg shadow-lg overflow-hidden'>
                                 <button

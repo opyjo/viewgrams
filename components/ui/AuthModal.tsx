@@ -102,7 +102,7 @@ export default function AuthModal({ open, onClose, onAuthSuccess, initialMode = 
     return (
         <Modal open={open} onClose={handleClose} title={getTitle()}>
             {error && (
-                <div className='mb-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200'>
+                <div className='mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600'>
                     {error}
                 </div>
             )}
@@ -110,40 +110,40 @@ export default function AuthModal({ open, onClose, onAuthSuccess, initialMode = 
             {mode !== 'confirm' && (
                 <form onSubmit={mode === 'signIn' ? handleSignIn : handleSignUp} className='space-y-3'>
                     <div>
-                        <label className='text-[10px] uppercase tracking-[0.3em] text-slate-400'>Email</label>
+                        <label className='text-[10px] uppercase tracking-[0.3em] text-slate-500'>Email</label>
                         <input
                             type='email'
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className='mt-1 w-full rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300/30'
+                            className='mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent'
                             placeholder='you@example.com'
                         />
                     </div>
                     <div>
-                        <label className='text-[10px] uppercase tracking-[0.3em] text-slate-400'>Password</label>
+                        <label className='text-[10px] uppercase tracking-[0.3em] text-slate-500'>Password</label>
                         <input
                             type='password'
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className='mt-1 w-full rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300/30'
+                            className='mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent'
                             placeholder='********'
                         />
                     </div>
                     <button
                         type='submit'
                         disabled={loading}
-                        className='w-full rounded-lg bg-amber-300 py-2 text-sm font-semibold text-slate-950 transition-all hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60'
+                        className='w-full rounded-lg bg-slate-900 py-2 text-sm font-semibold text-white transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
                     >
                         {loading ? 'Working...' : mode === 'signIn' ? 'Sign in' : 'Create account'}
                     </button>
-                    <div className='text-center text-xs text-slate-400'>
+                    <div className='text-center text-xs text-slate-500'>
                         {mode === 'signIn' ? (
                             <button
                                 type='button'
                                 onClick={() => handleModeSwitch('signUp')}
-                                className='text-amber-200 hover:text-amber-100'
+                                className='text-blue-600 hover:text-blue-500'
                             >
                                 Need an account? Sign up
                             </button>
@@ -151,7 +151,7 @@ export default function AuthModal({ open, onClose, onAuthSuccess, initialMode = 
                             <button
                                 type='button'
                                 onClick={() => handleModeSwitch('signIn')}
-                                className='text-amber-200 hover:text-amber-100'
+                                className='text-blue-600 hover:text-blue-500'
                             >
                                 Have an account? Sign in
                             </button>
@@ -163,27 +163,27 @@ export default function AuthModal({ open, onClose, onAuthSuccess, initialMode = 
             {mode === 'confirm' && (
                 <form onSubmit={handleConfirm} className='space-y-3'>
                     <div>
-                        <label className='text-[10px] uppercase tracking-[0.3em] text-slate-400'>Confirmation code</label>
+                        <label className='text-[10px] uppercase tracking-[0.3em] text-slate-500'>Confirmation code</label>
                         <input
                             type='text'
                             required
                             value={confirmCode}
                             onChange={(e) => setConfirmCode(e.target.value)}
-                            className='mt-1 w-full rounded-lg border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-300/30'
+                            className='mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent'
                             placeholder='123456'
                         />
                     </div>
                     <button
                         type='submit'
                         disabled={loading}
-                        className='w-full rounded-lg bg-amber-300 py-2 text-sm font-semibold text-slate-950 transition-all hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60'
+                        className='w-full rounded-lg bg-slate-900 py-2 text-sm font-semibold text-white transition-all hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60'
                     >
                         {loading ? 'Working...' : 'Confirm'}
                     </button>
                     <button
                         type='button'
                         onClick={() => handleModeSwitch('signIn')}
-                        className='text-center text-xs text-amber-200 hover:text-amber-100 w-full'
+                        className='text-center text-xs text-blue-600 hover:text-blue-500 w-full'
                     >
                         Back to sign in
                     </button>

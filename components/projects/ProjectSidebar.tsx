@@ -21,11 +21,16 @@ export default function ProjectSidebar({
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
 
-  const { data, loading, refetch } = useQuery<ListProjectsResult>(LIST_PROJECTS, {
+  const { data, loading, error, refetch } = useQuery<ListProjectsResult>(LIST_PROJECTS, {
     fetchPolicy: 'cache-and-network',
   });
 
   const projects = data?.listProjects?.items || [];
+
+  // Log any errors for debugging
+  if (error) {
+    console.error('Error loading projects:', error);
+  }
 
   const handleProjectClick = (projectId: string | null) => {
     onSelectProject(projectId);
@@ -105,6 +110,13 @@ export default function ProjectSidebar({
             </div>
           )}
 
+          {error && (
+            <div className="px-3 py-4 text-xs text-red-600 bg-red-50 rounded-lg border border-red-200">
+              <div className="font-semibold mb-1">Error loading projects</div>
+              <div className="text-red-500">{error.message}</div>
+            </div>
+          )}
+
           {projects.map((project) => {
             const count = diagramCounts[project.projectId] || project.diagramCount || 0;
             const isSelected = selectedProjectId === project.projectId;
@@ -158,6 +170,17 @@ export default function ProjectSidebar({
               </button>
             );
           })}
+        </div>
+
+        {/* Create New Project Button */}
+        <div className="p-3 border-t border-slate-100">
+          <button
+            onClick={handleCreateProject}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors text-sm font-medium"
+          >
+            <Plus size={16} />
+            <span>New Project</span>
+          </button>
         </div>
       </div>
 

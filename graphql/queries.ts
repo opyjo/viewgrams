@@ -34,6 +34,9 @@ export const LIST_DIAGRAMS = gql`
   }
 `;
 
+// WARNING: searchDiagrams uses a DynamoDB Scan with contains() filter.
+// This is O(n) and will degrade as the table grows. For production scale,
+// consider migrating to OpenSearch/Elasticsearch or DynamoDB GSI on title.
 export const SEARCH_DIAGRAMS = gql`
   query SearchDiagrams($searchTerm: String!, $projectId: String) {
     searchDiagrams(searchTerm: $searchTerm, projectId: $projectId) {

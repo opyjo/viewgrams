@@ -36,7 +36,7 @@ export default function Modal({ open, onClose, title, children, showCloseButton 
 
     return (
         <div
-            className='fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4'
+            className='fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4'
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
@@ -44,7 +44,7 @@ export default function Modal({ open, onClose, title, children, showCloseButton 
             aria-modal='true'
             aria-labelledby={title ? 'modal-title' : undefined}
         >
-            <div className='w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900 p-6 text-slate-100 shadow-2xl'>
+            <div className='w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 text-slate-900 shadow-2xl'>
                 {(title || showCloseButton) && (
                     <div className='flex items-center justify-between mb-4'>
                         {title && (
@@ -55,7 +55,7 @@ export default function Modal({ open, onClose, title, children, showCloseButton 
                         {showCloseButton && (
                             <button
                                 onClick={onClose}
-                                className='text-slate-400 hover:text-slate-200 ml-auto'
+                                className='text-slate-400 hover:text-slate-600 ml-auto'
                                 aria-label='Close modal'
                             >
                                 <X size={18} />

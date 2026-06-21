@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { renderMermaid } from '@/lib/mermaid-utils';
+import { sanitizeSvg } from '@/lib/sanitize';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Eye, Loader2, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 
@@ -20,7 +21,6 @@ export default function PreviewPanel({ code, className, onRendered, onView }: Pr
     const containerRef = useRef<HTMLDivElement>(null);
     const onRenderedRef = useRef(onRendered);
 
-    // Keep ref in sync with prop
     useEffect(() => {
         onRenderedRef.current = onRendered;
     }, [onRendered]);
@@ -40,9 +40,10 @@ export default function PreviewPanel({ code, className, onRendered, onView }: Pr
                 setError(renderError);
                 onRenderedRef.current?.(null);
             } else {
-                setSvg(renderedSvg);
+                const sanitized = renderedSvg ? sanitizeSvg(renderedSvg) : null;
+                setSvg(sanitized);
                 setError(null);
-                onRenderedRef.current?.(renderedSvg);
+                onRenderedRef.current?.(sanitized);
             }
             setLoading(false);
         };
@@ -53,6 +54,22 @@ export default function PreviewPanel({ code, className, onRendered, onView }: Pr
     const handleZoomIn = () => setZoom((z) => Math.min(z + 0.2, 3));
     const handleZoomOut = () => setZoom((z) => Math.max(z - 0.2, 0.5));
     const handleResetZoom = () => setZoom(1);
+
+    // Ctrl+Scroll zoom
+    const handleWheel = useCallback((e: WheelEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            setZoom((z) => Math.min(3, Math.max(0.5, z + delta)));
+        }
+    }, []);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        return () => container.removeEventListener('wheel', handleWheel);
+    }, [handleWheel]);
 
     return (
         <div className={cn('flex flex-col h-full bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20 relative overflow-hidden border border-slate-200 rounded-2xl shadow-lg', className)}>

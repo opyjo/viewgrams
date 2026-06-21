@@ -3,6 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import ProjectPicker from '@/components/projects/ProjectPicker';
+import MermaidCodeMirror from './MermaidCodeMirror';
 
 interface CodeEditorProps {
     value: string;
@@ -13,6 +14,9 @@ interface CodeEditorProps {
     onTitleChange: (value: string) => void;
     onDescriptionChange: (value: string) => void;
     onProjectIdChange: (value: string | null) => void;
+    onSave?: () => void;
+    onExport?: () => void;
+    onNew?: () => void;
     className?: string;
 }
 
@@ -25,6 +29,9 @@ export default function CodeEditor({
     onTitleChange,
     onDescriptionChange,
     onProjectIdChange,
+    onSave,
+    onExport,
+    onNew,
     className,
 }: CodeEditorProps) {
     return (
@@ -34,7 +41,7 @@ export default function CodeEditor({
                     <p className='text-[10px] uppercase tracking-wider text-slate-500 font-semibold'>Editor</p>
                     <p className='text-sm font-semibold text-slate-700'>Mermaid source</p>
                 </div>
-                <span className='text-[10px] text-slate-400'>Live render</span>
+                <span className='text-[10px] text-slate-400'>Ctrl/Cmd+S to save</span>
             </div>
             <div className='px-4 py-3 border-b border-slate-200 bg-white/40 space-y-2.5'>
                 <div>
@@ -62,13 +69,15 @@ export default function CodeEditor({
                     />
                 </div>
             </div>
-            <textarea
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className='flex-1 w-full bg-white/30 p-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 font-mono text-[13px] leading-relaxed text-slate-800 placeholder-slate-400'
-                spellCheck={false}
-                placeholder='Enter Mermaid code here...'
-            />
+            <div className='flex-1 overflow-hidden'>
+                <MermaidCodeMirror
+                    value={value}
+                    onChange={onChange}
+                    onSave={onSave}
+                    onExport={onExport}
+                    onNew={onNew}
+                />
+            </div>
         </div>
     );
 }

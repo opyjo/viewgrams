@@ -4,7 +4,7 @@ import { getIdToken } from '@/lib/auth';
 
 const URL = process.env.NEXT_PUBLIC_APPSYNC_URL;
 const httpLink = createHttpLink({
-    uri: URL || 'http://localhost:4000/graphql', // Fallback for local dev/initial setup
+    uri: URL || 'http://localhost:4000/graphql',
 });
 
 const authLink = setContext(async (_, { headers }) => {
@@ -19,5 +19,30 @@ const authLink = setContext(async (_, { headers }) => {
 
 export const client = new ApolloClient({
     link: authLink.concat(httpLink),
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+        typePolicies: {
+            Diagram: {
+                keyFields: ['id'],
+            },
+            Project: {
+                keyFields: ['projectId'],
+            },
+            Query: {
+                fields: {
+                    listDiagrams: {
+                        keyArgs: ['projectId'],
+                        merge(existing, incoming, { args }) {
+                            if (!args?.nextToken) {
+                                return incoming;
+                            }
+                            return {
+                                ...incoming,
+                                items: [...(existing?.items || []), ...incoming.items],
+                            };
+                        },
+                    },
+                },
+            },
+        },
+    }),
 });

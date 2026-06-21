@@ -4,33 +4,24 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery } from '@apollo/client/react';
 import Header from '@/components/ui/Header';
-import { useDebounce } from '@/hooks/use-debounce';
-import { getCurrentSession, signOut, type AuthSession } from '@/lib/auth';
-import AuthModal from '@/components/ui/AuthModal';
 import Modal from '@/components/ui/Modal';
-import { DELETE_DIAGRAM } from '@/graphql/mutations';
+import { useDebounce } from '@/hooks/use-debounce';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/Toast';
+import AuthModal from '@/components/ui/AuthModal';
+import { sanitizeSvg } from '@/lib/sanitize';
+import { CREATE_DIAGRAM, DELETE_DIAGRAM } from '@/graphql/mutations';
 import { LIST_DIAGRAMS, SEARCH_DIAGRAMS } from '@/graphql/queries';
-import { ExternalLink, Files, Loader2, Search, Trash2 } from 'lucide-react';
+import { LIST_PROJECTS } from '@/graphql/projectQueries';
+import { Copy, ExternalLink, FilePlus2, Files, Loader2, Search, Trash2 } from 'lucide-react';
 import ProjectSidebar from '@/components/projects/ProjectSidebar';
+import type { DiagramSummary, ListDiagramsResult, SearchDiagramsResult, CreateDiagramInput, CreateDiagramResult } from '@/types/diagram';
+import type { Project } from '@/types/project';
 
-interface DiagramSummary {
-    id: string;
-    title: string;
-    description?: string | null;
-    svgPreview?: string | null;
-    createdAt?: string;
-    updatedAt?: string;
-    projectId?: string | null;
-}
-
-interface ListDiagramsResult {
-    listDiagrams: {
-        items: DiagramSummary[];
+interface ListProjectsResult {
+    listProjects: {
+        items: Project[];
     };
-}
-
-interface SearchDiagramsResult {
-    searchDiagrams: DiagramSummary[];
 }
 
 export default function SavedDiagramsPage() {
@@ -38,14 +29,13 @@ export default function SavedDiagramsPage() {
     const searchParams = useSearchParams();
     const [searchTerm, setSearchTerm] = useState('');
     const debouncedSearch = useDebounce(searchTerm, 400);
-    const [session, setSession] = useState<AuthSession | null>(null);
 
-    const [authOpen, setAuthOpen] = useState(false);
+    const { session, authOpen, openAuth, closeAuth, setSession, signOut } = useAuth();
+    const { toast } = useToast();
+
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-    const [deleteSuccessOpen, setDeleteSuccessOpen] = useState(false);
     const [diagramToDelete, setDiagramToDelete] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
-
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -55,15 +45,30 @@ export default function SavedDiagramsPage() {
         }
     }, [searchParams]);
 
+    // Projects query for color/name display on cards
+    const { data: projectsData } = useQuery<ListProjectsResult>(LIST_PROJECTS, {
+        skip: !session,
+    });
+
+    const projectMap = useMemo(() => {
+        const map: Record<string, { name: string; color: string | null }> = {};
+        if (projectsData?.listProjects?.items) {
+            projectsData.listProjects.items.forEach((p) => {
+                map[p.projectId] = { name: p.name, color: p.color || null };
+            });
+        }
+        return map;
+    }, [projectsData]);
+
     const { data: allDiagramsData } = useQuery<ListDiagramsResult, { limit: number }>(LIST_DIAGRAMS, {
         variables: { limit: 200 },
         skip: !session,
         fetchPolicy: 'cache-and-network',
     });
 
-    const { data: listData, loading: listLoading, refetch: refetchList } = useQuery<ListDiagramsResult, { limit: number; projectId?: string | null }>(LIST_DIAGRAMS, {
+    const { data: listData, loading: listLoading, refetch: refetchList, fetchMore } = useQuery<ListDiagramsResult, { limit: number; nextToken?: string | null; projectId?: string | null }>(LIST_DIAGRAMS, {
         variables: {
-            limit: 50,
+            limit: 24,
             projectId: selectedProjectId && selectedProjectId !== 'uncategorized' ? selectedProjectId : undefined
         },
         skip: !session || debouncedSearch.trim().length > 0,
@@ -80,18 +85,9 @@ export default function SavedDiagramsPage() {
     });
 
     const [deleteDiagram] = useMutation(DELETE_DIAGRAM);
+    const [createDiagram] = useMutation<CreateDiagramResult, { input: CreateDiagramInput }>(CREATE_DIAGRAM);
 
-    useEffect(() => {
-        let isMounted = true;
-        getCurrentSession().then((current) => {
-            if (isMounted) {
-                setSession(current);
-            }
-        });
-        return () => {
-            isMounted = false;
-        };
-    }, []);
+    const nextToken = listData?.listDiagrams?.nextToken || null;
 
     const diagrams = useMemo<DiagramSummary[]>(() => {
         let allDiagrams: DiagramSummary[] = [];
@@ -109,17 +105,13 @@ export default function SavedDiagramsPage() {
         return allDiagrams;
     }, [debouncedSearch, listData, searchData, selectedProjectId]);
 
-    const openAuth = () => {
-        setAuthOpen(true);
-    };
-
-    const handleAuthSuccess = (newSession: AuthSession) => {
-        setSession(newSession);
-        setAuthOpen(false);
+    const handleAuthSuccess = (newSession: typeof session) => {
+        if (newSession) setSession(newSession);
+        closeAuth();
     };
 
     const formatTimestamp = (value?: string) => {
-        if (!value) return '—';
+        if (!value) return '\u2014';
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return value;
         return date.toLocaleString();
@@ -144,10 +136,11 @@ export default function SavedDiagramsPage() {
             } else {
                 await refetchList();
             }
-            setDeleteSuccessOpen(true);
+            toast('Diagram deleted');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete diagram.';
             setActionError(message);
+            toast(message, 'error');
         } finally {
             setDiagramToDelete(null);
         }
@@ -155,11 +148,36 @@ export default function SavedDiagramsPage() {
 
     const handleSignOut = () => {
         signOut();
-        setSession(null);
     };
 
     const handleOpenDiagram = (id: string) => {
         router.push(`/?diagram=${id}`);
+    };
+
+    const handleDuplicate = async (diagram: DiagramSummary) => {
+        if (!session) return;
+        try {
+            const input: CreateDiagramInput = {
+                title: `${diagram.title} (copy)`,
+                description: diagram.description || null,
+                code: '', // we don't have code in summary; user will edit
+                svgPreview: diagram.svgPreview || null,
+                projectId: diagram.projectId || null,
+            };
+            await createDiagram({ variables: { input } });
+            toast('Diagram duplicated');
+            await refetchList();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to duplicate diagram.';
+            toast(message, 'error');
+        }
+    };
+
+    const handleLoadMore = () => {
+        if (!nextToken) return;
+        fetchMore({
+            variables: { nextToken },
+        });
     };
 
     const handleSelectProject = (projectId: string | null) => {
@@ -201,19 +219,38 @@ export default function SavedDiagramsPage() {
 
             <div className='flex flex-1 overflow-hidden'>
                 {session && (
-                    <ProjectSidebar
-                        selectedProjectId={selectedProjectId}
-                        onSelectProject={handleSelectProject}
-                        diagramCounts={diagramCounts}
-                    />
+                    <div className="hidden md:block">
+                        <ProjectSidebar
+                            selectedProjectId={selectedProjectId}
+                            onSelectProject={handleSelectProject}
+                            diagramCounts={diagramCounts}
+                        />
+                    </div>
                 )}
-                <main className='flex-1 px-8 py-12 overflow-y-auto'>
+                <main className='flex-1 px-4 md:px-8 py-8 md:py-12 overflow-y-auto'>
                 <div className='mx-auto max-w-6xl'>
                     <div className='flex flex-col gap-2 mb-8 fade-up'>
                         <span className='text-xs font-semibold uppercase tracking-[0.4em] text-slate-400'>Library</span>
-                        <h2 className='text-4xl font-bold text-slate-900'>My Diagrams</h2>
+                        <h2 className='text-3xl md:text-4xl font-bold text-slate-900'>My Diagrams</h2>
                         <p className='text-sm text-slate-600'>Browse and manage your Mermaid diagrams</p>
                     </div>
+
+                    {/* Mobile project filter */}
+                    {session && (
+                        <div className="md:hidden mb-4">
+                            <select
+                                value={selectedProjectId || ''}
+                                onChange={(e) => handleSelectProject(e.target.value || null)}
+                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm"
+                            >
+                                <option value="">All Diagrams</option>
+                                <option value="uncategorized">Uncategorized</option>
+                                {projectsData?.listProjects?.items?.map((p) => (
+                                    <option key={p.projectId} value={p.projectId}>{p.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     <div className='flex flex-col gap-4'>
                         <div className='relative fade-up'>
@@ -244,17 +281,32 @@ export default function SavedDiagramsPage() {
                                 </button>
                             </div>
                         ) : (
+                            <>
                             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 fade-up'>
                                 {(listLoading || searchLoading) && (
                                     <div className='flex items-center justify-center gap-2 text-xs text-slate-400 py-6 sm:col-span-2 lg:col-span-3'>
                                         <Loader2 size={14} className='animate-spin' />
-                                        Loading diagrams…
+                                        Loading diagrams...
                                     </div>
                                 )}
 
                                 {!listLoading && !searchLoading && diagrams.length === 0 && (
-                                    <div className='rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-12 text-center text-sm text-slate-500 sm:col-span-2 lg:col-span-3'>
-                                        No diagrams found.
+                                    <div className='rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 p-12 text-center sm:col-span-2 lg:col-span-3'>
+                                        <div className="flex flex-col items-center gap-4">
+                                            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200">
+                                                <FilePlus2 size={32} className="text-slate-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-700 mb-1">No diagrams yet</p>
+                                                <p className="text-sm text-slate-500 mb-4">Create your first diagram to get started</p>
+                                            </div>
+                                            <button
+                                                onClick={() => router.push('/')}
+                                                className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-all shadow-sm"
+                                            >
+                                                Create your first diagram
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
@@ -283,6 +335,16 @@ export default function SavedDiagramsPage() {
                                                 <button
                                                     onClick={(event) => {
                                                         event.stopPropagation();
+                                                        handleDuplicate(diagram);
+                                                    }}
+                                                    className='p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors'
+                                                    title='Duplicate diagram'
+                                                >
+                                                    <Copy size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
                                                         handleOpenDiagram(diagram.id);
                                                     }}
                                                     className='p-2 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors'
@@ -306,7 +368,7 @@ export default function SavedDiagramsPage() {
                                             {diagram.svgPreview ? (
                                                 <div
                                                     className='w-full h-full flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:max-h-full [&>svg]:max-w-full'
-                                                    dangerouslySetInnerHTML={{ __html: diagram.svgPreview }}
+                                                    dangerouslySetInnerHTML={{ __html: sanitizeSvg(diagram.svgPreview) }}
                                                 />
                                             ) : (
                                                 <div className='opacity-30'>
@@ -314,12 +376,34 @@ export default function SavedDiagramsPage() {
                                                 </div>
                                             )}
                                         </div>
-                                        <div className='flex items-center text-xs text-slate-400'>
+                                        <div className='flex items-center justify-between text-xs text-slate-400'>
                                             <span>{formatTimestamp(diagram.updatedAt || diagram.createdAt)}</span>
+                                            {diagram.projectId && projectMap[diagram.projectId] && (
+                                                <span className="flex items-center gap-1.5">
+                                                    <span
+                                                        className="w-2 h-2 rounded-full"
+                                                        style={{ backgroundColor: projectMap[diagram.projectId].color || '#94a3b8' }}
+                                                    />
+                                                    <span className="truncate max-w-[100px]">{projectMap[diagram.projectId].name}</span>
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
                             </div>
+
+                            {/* Load More */}
+                            {nextToken && !searchLoading && debouncedSearch.trim().length === 0 && (
+                                <div className="flex justify-center pt-4">
+                                    <button
+                                        onClick={handleLoadMore}
+                                        className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition-all"
+                                    >
+                                        Load More
+                                    </button>
+                                </div>
+                            )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -328,7 +412,7 @@ export default function SavedDiagramsPage() {
 
             <AuthModal
                 open={authOpen}
-                onClose={() => setAuthOpen(false)}
+                onClose={closeAuth}
                 onAuthSuccess={handleAuthSuccess}
             />
 
@@ -341,7 +425,7 @@ export default function SavedDiagramsPage() {
                 title="Delete Diagram"
             >
                 <div className="space-y-4">
-                    <p className="text-slate-300 text-sm">
+                    <p className="text-slate-600 text-sm">
                         Are you sure you want to delete this diagram? This action cannot be undone.
                     </p>
                     <div className="flex gap-3 justify-end">
@@ -350,7 +434,7 @@ export default function SavedDiagramsPage() {
                                 setDeleteConfirmOpen(false);
                                 setDiagramToDelete(null);
                             }}
-                            className="px-4 py-2 rounded-lg bg-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-600 transition-colors"
+                            className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-colors"
                         >
                             Cancel
                         </button>
@@ -361,17 +445,6 @@ export default function SavedDiagramsPage() {
                             Delete
                         </button>
                     </div>
-                </div>
-            </Modal>
-
-            <Modal
-                open={deleteSuccessOpen}
-                onClose={() => setDeleteSuccessOpen(false)}
-                title="Success"
-            >
-                <div className="text-center py-4">
-                    <div className="text-green-400 text-5xl mb-4">✓</div>
-                    <p className="text-slate-300">Your diagram has been deleted successfully!</p>
                 </div>
             </Modal>
         </div>
